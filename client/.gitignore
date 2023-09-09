@@ -3,3 +3,5 @@ dist
 dist_scripts
 *.log
 package-lock.json
+key.pem
+cert.pem
