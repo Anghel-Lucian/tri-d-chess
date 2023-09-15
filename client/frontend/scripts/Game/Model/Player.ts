@@ -7,9 +7,10 @@ export default class Player {
     public color: PlayerColor;
     public pieces: Piece[]
 
-    constructor(username: string, id: string, color: PlayerColor) {
+    constructor(username: string, id: string, color: PlayerColor, pieces: Piece[]) {
         this.username = username;
         this.id = id;
         this.color = color;
+        this.pieces = pieces;
     }
 }

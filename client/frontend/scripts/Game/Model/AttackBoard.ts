@@ -7,11 +7,13 @@ export default class AttackBoard {
     public pieces: Piece[];
     public color: PlayerColor;
     public cells: Cell[];
+    public position: Cell;
 
-    constructor(type: AttackBoardType, pieces: Piece[], color: PlayerColor) {
+    constructor(type: AttackBoardType, pieces: Piece[], color: PlayerColor, position: Cell) {
         this.type = type;
         this.pieces = pieces;
         this.color = color;
+        this.position = position;
     }
 
 }
