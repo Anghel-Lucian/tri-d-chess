@@ -1,5 +1,11 @@
 import * as THREE from 'three';
 
+import Game from './Game/Model/Game';
+
+const game = new Game("Lucian", "1", "Alexandra", "2");
+
+console.log(game);
+
 function main() {
 
 	const canvas = document.getElementById('game-container');

@@ -1,28 +1,25 @@
-import AttackBoard from './AttackBoard';
 import FullBoard from './FullBoard';
-import Cell from './Cell';
-import Piece from './Piece';
+import { FullBoardType, PieceMap, PlayerColor } from '../common';
 
 export default class Board {
-    public whitePieces: Piece[];
-    public blackPieces: Piece[];
-    public attackBoards: AttackBoard[];
-    public fullBoards: FullBoard[];
-    public cells: Cell[]; // do we need this? how do we distinguish between the cells of a board vs another? Also the attack and full boards already have their cells array
+    public whitePieces: PieceMap;
+    public blackPieces: PieceMap;
+    public fullBoardTop: FullBoard;
+    public fullBoardMiddle: FullBoard;
+    public fullBoardBottom: FullBoard;
 
-    constructor(whitePieces: Piece[], blackPieces: Piece[]) {
+    constructor(whitePieces: PieceMap, blackPieces: PieceMap) {
         this.whitePieces = whitePieces;
         this.blackPieces = blackPieces;
+
+        this.initializeFullBoards();
     }
 
     private initializeFullBoards(): Board {
-        // TODO: shall the full boards initialize their cells on their own? and then they initialize the attack boards? but the attack boards
-        // need to be here as well because they can move across full boards
+        this.fullBoardTop = new FullBoard(FullBoardType.Top, this.whitePieces, PlayerColor.White);
+        this.fullBoardMiddle = new FullBoard(FullBoardType.Middle);
+        this.fullBoardBottom = new FullBoard(FullBoardType.Bottom, this.blackPieces, PlayerColor.Black);
 
-        return this;
-    }
-
-    private placePiecesOnBoards(): Board {
         return this;
     }
 }

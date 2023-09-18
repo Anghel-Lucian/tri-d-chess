@@ -1,15 +1,108 @@
-import {FullBoardType} from '../common';
-import Piece from './Piece';
+import {
+    AttackBoardType,
+    FULL_BOARD_DIMENSION,
+    FullBoardType,
+    PieceMap,
+    PlayerColor
+} from '../common';
 import Cell from './Cell';
+import AttackBoard from './AttackBoard';
 
 export default class FullBoard {
     public type: FullBoardType;
-    public pieces: Piece[];
-    public cells: Cell[];
+    public pieces: PieceMap;
+    public attackBoardLeft: AttackBoard;
+    public attackBoardRight: AttackBoard;
+    public cells: Cell[][];
 
-    constructor(type: FullBoardType, pieces: Piece[]) {
+    constructor(type: FullBoardType, pieces?: PieceMap, color?: PlayerColor) {
         this.type = type;
-        this.pieces = pieces;
+
+        this
+            .initializeAttackBoards(pieces, color)
+            .initializeCellsAndPieces(pieces);
+
+    }
+
+    private initializeAttackBoards(pieces: PieceMap, color: PlayerColor): FullBoard {
+        if (this.type === FullBoardType.Top || this.type === FullBoardType.Bottom) {
+            this.attackBoardLeft = new AttackBoard(AttackBoardType.Left, pieces, color); 
+            this.attackBoardRight = new AttackBoard(AttackBoardType.Right, pieces, color); 
+        }
+
+        return this;
+    }
+
+    private initializeCellsAndPieces(pieces: PieceMap): FullBoard {
+        for (let row: number = 0; row < FULL_BOARD_DIMENSION; row++) {
+            for (let column: number = 0; column < FULL_BOARD_DIMENSION; column++) { 
+
+                if (this.type === FullBoardType.Top) {
+                    if (row === 0 && column === 0) {
+                        const piece = pieces.Knight0;
+
+                        this.pieces.Knight0 = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece, this.attackBoardLeft); 
+                    } else if (row === 0 && column === 1) {
+                        const piece = pieces.Bishop0;
+
+                        this.pieces.Bishop0 = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                    } else if (row === 0 && column === 2) {
+                        const piece = pieces.Bishop1;
+
+                        this.pieces.Bishop1 = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                    } else if (row === 0 && column === 3) {
+                        const piece = pieces.Knight1;
+
+                        this.pieces.Knight1 = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece, this.attackBoardRight); 
+                    } else if (row === 1) {
+                        const piece = pieces[`Pawn${column}` as keyof PieceMap];
+
+                        this.pieces[`Pawn${column}` as keyof PieceMap] = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                    } else {
+                        this.cells[row][column] = new Cell(row, column, this.type);
+                    }
+                }
+
+                if (this.type === FullBoardType.Bottom) {
+                    if (row === 3 && column === 0) {
+                        const piece = pieces.Knight0;
+
+                        this.pieces.Knight0 = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece, this.attackBoardLeft);
+                    } else if (row === 3 && column === 1) {
+                        const piece = pieces.Bishop0;
+
+                        this.pieces.Bishop0 = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                    } else if (row === 3 && column === 2) {
+                        const piece = pieces.Bishop1;
+
+                        this.pieces.Bishop1 = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                    } else if (row === 3 && column === 3) {
+                        const piece = pieces.Knight1;
+
+                        this.pieces.Knight1 = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece, this.attackBoardRight);
+                    } else if (row === 2) {
+                        const piece = pieces[`Pawn${column}` as keyof PieceMap];
+
+                        this.pieces[`Pawn${column}` as keyof PieceMap] = piece;
+                        this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                    } else {
+                        this.cells[row][column] = new Cell(row, column, this.type);
+                    }
+                }
+            }
+        }
+
+
+        return this;
     }
 
 }
