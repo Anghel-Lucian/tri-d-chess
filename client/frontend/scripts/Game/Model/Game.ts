@@ -3,6 +3,7 @@ import Move from "./Move";
 import Board from "./Board";
 import Piece from "./Piece";
 import { PieceMap, PieceName, PlayerColor } from "../common";
+import AttackBoard from "./AttackBoard";
 
 export default class Game {
     private playerOne: Player;
@@ -58,6 +59,26 @@ export default class Game {
     private initializeBoard(): Game {
         this.board = new Board(this.whitePieces, this.blackPieces);
 
+        return this;
+    }
+
+    public makeMove(move: Move): Game {
+        // TODO: check if move is valid, maybe here/maybe somewhere else, as in before calling this makeMove func
+        // TODO: check if attack board is captured
+        this.board.makeMove(move);
+
+        return this;
+    }
+
+    public rotateAttackBoard(attackBoard: AttackBoard): Game {
+        this.board.rotateAttackBoard(attackBoard);
+
+        return this;
+    }
+
+    // TODO: implement this, its valid only when there's a single piece on the attack board
+    public moveAttackBoard(attackBoard: AttackBoard): Game {
+    
         return this;
     }
 }

@@ -7,11 +7,11 @@ export default class Move {
     public endCell: Cell;
     public eaten: Piece;
 
-    constructor(piece: Piece, startCell: Cell, endCell: Cell, eaten: Piece) {
-        this.piece = piece;
+    constructor(startCell: Cell, endCell: Cell) {
+        this.piece = startCell.piece;
         this.startCell = startCell;
         this.endCell = endCell;
-        this.eaten = eaten;
+        this.eaten = endCell.piece;
     }
 }
 

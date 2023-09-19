@@ -105,4 +105,35 @@ export default class FullBoard {
         return this;
     }
 
+    public hasAttackBoard(attackBoard: AttackBoard): boolean {
+        if (this.attackBoardLeft?.type === attackBoard.type 
+            && this.attackBoardLeft.color === attackBoard.color) {
+            return true;
+        } else if (this.attackBoardRight?.type === attackBoard.type
+                   && this.attackBoardRight.color === attackBoard.color) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public rotateAttackBoard(attackBoard: AttackBoard): FullBoard {
+        if (!this.attackBoardLeft && !this.attackBoardRight) {
+            return this;
+        }
+
+        let attackBoardSelected: AttackBoard;
+
+        if (this.attackBoardLeft.type === attackBoard.type
+            && this.attackBoardLeft.color === attackBoard.color) {
+            attackBoardSelected = this.attackBoardLeft;
+        } else if (this.attackBoardRight.type === attackBoard.type
+                   && this.attackBoardRight.color === attackBoard.color) {
+            attackBoardSelected = this.attackBoardRight;
+        }
+
+        attackBoardSelected.rotateSelf();
+
+        return this;
+    }
 }

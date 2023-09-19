@@ -106,4 +106,24 @@ export default class AttackBoard {
 
         return this;
     }
+
+    /**
+      * Attack boards may rotate 180 degrees, such that
+      * the colors of its cells will match with those beneath (the full board's)
+      */
+    public rotateSelf(): AttackBoard {    
+        const [
+            pieceTopLeft,
+            pieceTopRight,
+            pieceBottomLeft,
+            pieceBottomRight
+        ] = [this.cells[0][0].piece, this.cells[0][1].piece, this.cells[1][0].piece, this.cells[1][1].piece];
+
+        this.cells[0][0].piece = pieceBottomRight;
+        this.cells[0][1].piece = pieceBottomLeft;
+        this.cells[1][0].piece = pieceTopRight;
+        this.cells[1][1].piece = pieceTopLeft;
+
+        return this;
+    }
 }
