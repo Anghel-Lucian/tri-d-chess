@@ -105,6 +105,7 @@ export default class FullBoard {
         return this;
     }
 
+    // TODO: change to reference equality using ===
     public hasAttackBoard(attackBoard: AttackBoard): boolean {
         if (this.attackBoardLeft?.type === attackBoard.type 
             && this.attackBoardLeft.color === attackBoard.color) {
@@ -117,6 +118,22 @@ export default class FullBoard {
         return false;
     }
 
+    public getCellHostingAttackBoard(attackBoard: AttackBoard): Cell {
+        for (let i: number = 0; i < FULL_BOARD_DIMENSION; i++) {
+            for (let j: number = 0; i < FULL_BOARD_DIMENSION; j++) {
+                if (this.cells[i][j].hostedAttackBoard === attackBoard) {
+                    return this.cells[i][j];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+      * The attack board can rotate 180 degrees, such that it's cells' colors
+      * align with the ones of the full board beneath it
+      */
     public rotateAttackBoard(attackBoard: AttackBoard): FullBoard {
         if (!this.attackBoardLeft && !this.attackBoardRight) {
             return this;

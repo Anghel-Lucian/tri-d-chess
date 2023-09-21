@@ -1,5 +1,6 @@
 import FullBoard from './FullBoard';
 import Move from './Move';
+import Cell from './Cell';
 import { FullBoardType, PieceMap, PlayerColor } from '../common';
 import AttackBoard from './AttackBoard';
 
@@ -25,6 +26,16 @@ export default class Board {
         return this;
     }
 
+    private getAttackBoardHost(attackBoard: AttackBoard): FullBoard {
+        if (this.fullBoardTop.hasAttackBoard(attackBoard)) {
+            return this.fullBoardTop;
+        } else if (this.fullBoardMiddle.hasAttackBoard(attackBoard)) {
+            return this.fullBoardMiddle;
+        } else if (this.fullBoardBottom.hasAttackBoard(attackBoard)) {
+            return this.fullBoardBottom;
+        }
+    }
+
     public makeMove(move: Move): Board {
         const startCell = move.startCell; 
         const endCell = move.endCell;
@@ -36,18 +47,24 @@ export default class Board {
         endCell.piece = startCell.piece;
         startCell.piece = null;
 
-
         return this;
     }
 
     public rotateAttackBoard(attackBoard: AttackBoard): Board {
-        if (this.fullBoardTop.hasAttackBoard(attackBoard)) {
-            this.fullBoardTop.rotateAttackBoard(attackBoard);
-        } else if (this.fullBoardMiddle.hasAttackBoard(attackBoard)) {
-            this.fullBoardMiddle.rotateAttackBoard(attackBoard);
-        } else if (this.fullBoardBottom.hasAttackBoard(attackBoard)) {
-            this.fullBoardBottom.rotateAttackBoard(attackBoard);
-        }
+        this.getAttackBoardHost(attackBoard).rotateAttackBoard(attackBoard);        
+
+        return this;
+    }
+
+    // TODO: Finish implementing this, careful that the destination can be in other boards as well
+    // Verification that the attack board has only one piece and partains to a particular player should be
+    // done somewhere else. Also, verify that there's no other attack board in the destination cell
+    public moveAttackBoard(attackBoard: AttackBoard, destination: Cell): Board {
+        const attackBoardHost: FullBoard = this.getAttackBoardHost(attackBoard);
+        const attackBoardHostCell: Cell = attackBoardHost.getCellHostingAttackBoard(attackBoard);
+
+        destination.hostedAttackBoard = attackBoard;
+        attackBoardHostCell.hostedAttackBoard = null;
 
         return this;
     }

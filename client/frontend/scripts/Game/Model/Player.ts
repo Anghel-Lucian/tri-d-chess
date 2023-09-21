@@ -1,4 +1,4 @@
-import { PieceMap, PlayerColor } from "../common";
+import { PieceMap, PieceName, PlayerColor, getPieceMapAlivePieces } from "../common";
 import Piece from "./Piece";
 
 export default class Player {
@@ -12,5 +12,11 @@ export default class Player {
         this.id = id;
         this.color = color;
         this.pieces = pieces;
+    }
+
+    public hasKingOnly(): boolean {
+        const alivePieces: Piece[] = getPieceMapAlivePieces(this.pieces);
+
+        return alivePieces.length === 1 && alivePieces[0].name === PieceName.King;
     }
 }
