@@ -34,6 +34,11 @@ export default class FullBoard {
     }
 
     private initializeCellsAndPieces(pieces: PieceMap): FullBoard {
+        this.pieces = {};
+        this.cells = Array(FULL_BOARD_DIMENSION).fill([]).map(() => Array(FULL_BOARD_DIMENSION).fill([]));
+
+        console.log(this.cells);
+
         for (let row: number = 0; row < FULL_BOARD_DIMENSION; row++) {
             for (let column: number = 0; column < FULL_BOARD_DIMENSION; column++) { 
 

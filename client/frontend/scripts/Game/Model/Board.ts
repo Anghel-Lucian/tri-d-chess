@@ -63,8 +63,10 @@ export default class Board {
         const attackBoardHost: FullBoard = this.getAttackBoardHost(attackBoard);
         const attackBoardHostCell: Cell = attackBoardHost.getCellHostingAttackBoard(attackBoard);
 
-        destination.hostedAttackBoard = attackBoard;
-        attackBoardHostCell.hostedAttackBoard = null;
+        if (!destination.hostedAttackBoard) {
+            destination.hostedAttackBoard = attackBoard;
+            attackBoardHostCell.hostedAttackBoard = null;
+        }
 
         return this;
     }

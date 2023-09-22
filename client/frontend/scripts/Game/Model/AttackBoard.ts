@@ -22,6 +22,9 @@ export default class AttackBoard {
     }
 
     private initializeCellsAndPieces(pieces: PieceMap): AttackBoard {
+        this.pieces = {};
+        this.cells = Array(ATTACK_BOARD_DIMENSION).fill([]).map(() => Array(ATTACK_BOARD_DIMENSION).fill([]));
+
         for (let row: number = 0; row < ATTACK_BOARD_DIMENSION; row++) {
             for (let column: number = 0; column < ATTACK_BOARD_DIMENSION; column++) { 
                 if (this.type === AttackBoardType.Left) {

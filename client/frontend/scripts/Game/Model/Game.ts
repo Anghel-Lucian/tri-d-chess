@@ -12,6 +12,7 @@ import AttackBoard from "./AttackBoard";
 export default class Game {
     private playerOne: Player;
     private playerTwo: Player;
+    private turnOwner: Player;
     private moves: Move[];
     private board: Board;
     private whitePieces: PieceMap; 
@@ -27,6 +28,9 @@ export default class Game {
     }
 
     private initializePieces(): Game {
+        this.whitePieces = {};
+        this.blackPieces = {};
+
         this.whitePieces[PieceName.King] = new Piece(PieceName.King, PlayerColor.White);
         this.blackPieces[PieceName.King] = new Piece(PieceName.King, PlayerColor.Black);
 
@@ -56,6 +60,7 @@ export default class Game {
     private initializePlayers(usernamePlayerOne: string, idPlayerOne: string, usernamePlayerTwo: string, idPlayerTwo: string): Game {
         this.playerOne = new Player(usernamePlayerOne, idPlayerOne, PlayerColor.White, this.whitePieces);
         this.playerTwo = new Player(usernamePlayerTwo, idPlayerTwo, PlayerColor.Black, this.blackPieces);
+        this.turnOwner = this.playerOne;
 
         return this;
     }
@@ -64,6 +69,20 @@ export default class Game {
         this.board = new Board(this.whitePieces, this.blackPieces);
 
         return this;
+    }
+
+    private endTurn(): Game {
+        if (this.turnOwner === this.playerOne) {
+            this.turnOwner = this.playerTwo;
+        } else if (this.turnOwner === this.playerTwo) {
+            this.turnOwner = this.playerTwo;
+        }
+
+        return this;
+    }
+
+    public getTurnOwner(): Player {
+        return this.turnOwner;
     }
 
     public makeMove(move: Move): Game {
@@ -92,6 +111,14 @@ export default class Game {
                 this.movesTillStall--;
             }
         }
+
+        this.endTurn();
+
+        return this;
+    }
+
+    public skipTurn(): Game {
+        this.endTurn();
 
         return this;
     }
