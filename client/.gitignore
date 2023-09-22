@@ -1,7 +1,7 @@
 node_modules
 dist
 dist_scripts
-client/dist_scripts
+client/frontend/dist_scripts
 *.log
 package-lock.json
 key.pem
