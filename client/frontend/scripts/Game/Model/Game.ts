@@ -19,12 +19,21 @@ export default class Game {
     private blackPieces: PieceMap;
     private movesTillStall: number;
     private kingOnlyRemaining: Player;
+    private static instance: Game;
 
-    constructor(usernamePlayerOne: string, idPlayerOne: string, usernamePlayerTwo: string, idPlayerTwo: string) {
+    private constructor(usernamePlayerOne: string, idPlayerOne: string, usernamePlayerTwo: string, idPlayerTwo: string) {
         this
             .initializePieces()
             .initializePlayers(usernamePlayerOne, idPlayerOne, usernamePlayerTwo, idPlayerTwo)
             .initializeBoard();
+    }
+
+    public static getInstance(usernamePlayerOne: string, idPlayerOne: string, usernamePlayerTwo: string, idPlayerTwo: string): Game {
+        if (!this.instance) {
+            this.instance = new Game(usernamePlayerOne, idPlayerOne, usernamePlayerTwo, idPlayerTwo);
+        }
+
+        return this.instance;
     }
 
     private initializePieces(): Game {
@@ -112,12 +121,14 @@ export default class Game {
             }
         }
 
+        this.moves.push(move);
         this.endTurn();
 
         return this;
     }
 
     public skipTurn(): Game {
+        this.moves.push(null);
         this.endTurn();
 
         return this;

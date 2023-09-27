@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import Game from './Game/Model/Game';
 
-const game = new Game("Lucian", "1", "Alexandra", "2");
+const game = Game.getInstance("Lucian", "1", "Alexandra", "2");
 
 console.log(game);
 
@@ -13,18 +14,22 @@ function main() {
 
 	const fov = 75;
 	const aspect = 2; // the canvas default
-	const near = 0.1;
-	const far = 5;
+	const near = 1;
+	const far = 25;
 	const camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
-	camera.position.z = 2;
+	camera.position.z = 10;
+
+    const controls = new OrbitControls(camera, renderer.domElement);
 
 	const scene = new THREE.Scene();
 
     const color = 0xFFFFFF;
-    const intensity = 3;
-    const light = new THREE.DirectionalLight( color, intensity );
-    light.position.set( - 1, 2, 4 );
+    const intensity = 10;
+    const light = new THREE.AmbientLight( 0xADD8E6, intensity );
+    //const light2 = new THREE.DirectionalLight( color, intensity );
+    //light.position.set( - 1, 2, -4 );
     scene.add( light );
+    //scene.add( light2 );
 
 	const boxWidth = 1;
 	const boxHeight = 1;
@@ -60,10 +65,12 @@ function main() {
             camera.updateProjectionMatrix();
         }
 
-		cube.rotation.x = time;
-		cube.rotation.y = time;
+		//cube.rotation.x = time;
+		//cube.rotation.y = time;
 
 		renderer.render( scene, camera );
+        
+        controls.update;
 
 		requestAnimationFrame( render );
 
