@@ -20,7 +20,8 @@ export interface ViewFullBoard {
         cells: ViewCell[],
         type: AttackBoardType,
         color: PlayerColor
-    }
+    },
+    type: FullBoardType
 }
 
 export interface ViewData {
