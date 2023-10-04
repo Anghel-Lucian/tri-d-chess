@@ -14,13 +14,15 @@ export interface ViewCell {
     }
 }
 
+export interface ViewAttackBoard {
+    cells: ViewCell[],
+    type: AttackBoardType,
+    color: PlayerColor
+}
+
 export interface ViewFullBoard {
     cells: ViewCell[],
-    attackBoards: {
-        cells: ViewCell[],
-        type: AttackBoardType,
-        color: PlayerColor
-    },
+    attackBoards: ViewAttackBoard[],
     type: FullBoardType
 }
 

@@ -1,5 +1,4 @@
-import { PieceMap, PieceName, PlayerColor, getPieceMapAlivePieces } from "../common";
-import Piece from "./Piece";
+import { Piece, PieceMap, PieceName, PlayerColor, getPieceMapAlivePieces } from "../common";
 
 export default class Player {
     public username: string;

@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import Game from './Game/Model/Game';
+import GameController from './Game/Controller/GameController';
 
-const game = Game.getInstance("Lucian", "1", "Alexandra", "2");
+const gameController = new GameController("Alexandra", "1", "Lucian", "2");
 
-console.log(game);
+console.log(gameController);
 
 function main() {
 
@@ -98,7 +98,8 @@ function main() {
 		//cube.rotation.y = time;
 
 		renderer.render( scene, camera );
-        
+       
+        // rqeuired if controls.enableDamping or controls.autoRotate are true
         controls.update;
 
 		requestAnimationFrame( render );

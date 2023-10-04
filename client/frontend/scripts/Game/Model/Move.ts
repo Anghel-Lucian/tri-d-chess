@@ -1,5 +1,5 @@
 import Cell from "./Cell";
-import Piece from "./Piece";
+import { Piece } from "../common";
 
 export default class Move {
     public piece: Piece;

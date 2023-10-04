@@ -1,5 +1,3 @@
-import Piece from "./Model/Piece";
-
 export enum PlayerColor {
     Black,
     White
@@ -33,6 +31,12 @@ export const ATTACK_BOARD_PAWN_INDEX_OFFSET = 4;
 export const ATTACK_BOARD_RIGHT_PAWN_INDEX_OFFSET = 2;
 // If one player has only the king left, the other has only 5 moves to checkmate him
 export const MOVES_TILL_STALL = 10;
+
+export interface Piece {
+    name: PieceName;
+    color: PlayerColor;
+    dead: boolean;
+}
 
 export interface PieceMap {
     King?: Piece;

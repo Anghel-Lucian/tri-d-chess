@@ -7,12 +7,14 @@ import {
     PlayerColor
 } from '../common';
 import Cell from './Cell';
+import { SerializedAttackBoard } from './common';
 
 export default class AttackBoard {
     public type: AttackBoardType;
     public pieces: PieceMap;
     public color: PlayerColor;
     public cells: Cell[][];
+    public captured: boolean;
 
     constructor(type: AttackBoardType, pieces: PieceMap, color: PlayerColor) {
         this.type = type;
@@ -128,5 +130,14 @@ export default class AttackBoard {
         this.cells[1][1].piece = pieceTopLeft;
 
         return this;
+    }
+
+    public getSerialized(): SerializedAttackBoard {
+        return {
+            cells: this.cells,
+            color: this.color,
+            captured: this.captured,
+            type: this.type
+        }
     }
 }

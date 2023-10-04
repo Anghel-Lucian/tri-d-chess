@@ -3,6 +3,7 @@ import Move from './Move';
 import Cell from './Cell';
 import { FullBoardType, PieceMap, PlayerColor } from '../common';
 import AttackBoard from './AttackBoard';
+import { SerializedBoards } from './common';
 
 export default class Board {
     public whitePieces: PieceMap;
@@ -69,6 +70,14 @@ export default class Board {
         }
 
         return this;
+    }
+
+    public getSerialized(): SerializedBoards{
+        return {
+            fullBoardTop: this.fullBoardTop.getSerialized(),
+            fullBoardMiddle: this.fullBoardMiddle.getSerialized(),
+            fullBoardBottom: this.fullBoardBottom.getSerialized()
+        };
     }
 }
 

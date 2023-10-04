@@ -1,6 +1,6 @@
 import { AttackBoardType, FullBoardType } from "../common";
 import AttackBoard from "./AttackBoard";
-import Piece from "./Piece";
+import { Piece } from "../common";
 
 export default class Cell {
     public x: number;

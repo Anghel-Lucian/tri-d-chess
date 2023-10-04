@@ -7,10 +7,12 @@ import {
 } from '../common';
 import Cell from './Cell';
 import AttackBoard from './AttackBoard';
+import { SerializedFullBoard } from './common';
 
 export default class FullBoard {
     public type: FullBoardType;
     public pieces: PieceMap;
+    // TODO: doesn't this need to support 4 attack boards?
     public attackBoardLeft: AttackBoard;
     public attackBoardRight: AttackBoard;
     public cells: Cell[][];
@@ -36,8 +38,6 @@ export default class FullBoard {
     private initializeCellsAndPieces(pieces: PieceMap): FullBoard {
         this.pieces = {};
         this.cells = Array(FULL_BOARD_DIMENSION).fill([]).map(() => Array(FULL_BOARD_DIMENSION).fill([]));
-
-        console.log(this.cells);
 
         for (let row: number = 0; row < FULL_BOARD_DIMENSION; row++) {
             for (let column: number = 0; column < FULL_BOARD_DIMENSION; column++) { 
@@ -157,5 +157,14 @@ export default class FullBoard {
         attackBoardSelected.rotateSelf();
 
         return this;
+    }
+
+    public getSerialized(): SerializedFullBoard {
+        return {
+            cells: this.cells,
+            attackBoardLeft: this.attackBoardLeft?.getSerialized(),
+            attackBoardRight: this.attackBoardRight?.getSerialized(),
+            type: this.type
+        }
     }
 }

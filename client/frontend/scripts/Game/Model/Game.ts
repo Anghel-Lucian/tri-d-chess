@@ -1,10 +1,10 @@
 import Player from "./Player";
 import Move from "./Move";
 import Board from "./Board";
-import Piece from "./Piece";
 import Cell from "./Cell";
-import { PieceMap, PieceName, PlayerColor, MOVES_TILL_STALL } from "../common";
+import { Piece, PieceMap, PieceName, PlayerColor, MOVES_TILL_STALL } from "../common";
 import AttackBoard from "./AttackBoard";
+import { SerializedBoards } from "./common";
 
 // TODO: implement checkmate check (whether a player should move the king or another piece)
 // TODO: implement turn tracking so that players can't move if its not their turn
@@ -40,26 +40,26 @@ export default class Game {
         this.whitePieces = {};
         this.blackPieces = {};
 
-        this.whitePieces[PieceName.King] = new Piece(PieceName.King, PlayerColor.White);
-        this.blackPieces[PieceName.King] = new Piece(PieceName.King, PlayerColor.Black);
+        this.whitePieces[PieceName.King] = {name: PieceName.King, color: PlayerColor.White, dead: false};
+        this.blackPieces[PieceName.King] = {name: PieceName.King, color: PlayerColor.Black, dead: false};
 
-        this.whitePieces[PieceName.Queen] = new Piece(PieceName.Queen, PlayerColor.White);
-        this.blackPieces[PieceName.Queen] = new Piece(PieceName.Queen, PlayerColor.Black);
+        this.whitePieces[PieceName.Queen] = {name: PieceName.Queen, color: PlayerColor.White, dead: false};
+        this.blackPieces[PieceName.Queen] = {name: PieceName.Queen, color: PlayerColor.Black, dead: false};
 
         for (let i: number = 0; i < 2; i++) {
-            this.whitePieces[`${PieceName.Rook}${i}` as keyof PieceMap] = new Piece(PieceName.Rook, PlayerColor.White);
-            this.blackPieces[`${PieceName.Rook}${i}` as keyof PieceMap] = new Piece(PieceName.Rook, PlayerColor.Black);
+            this.whitePieces[`${PieceName.Rook}${i}` as keyof PieceMap] = {name: PieceName.Rook, color: PlayerColor.White, dead: false};
+            this.blackPieces[`${PieceName.Rook}${i}` as keyof PieceMap] = {name: PieceName.Rook, color: PlayerColor.Black, dead: false};
 
-            this.whitePieces[`${PieceName.Knight}${i}` as keyof PieceMap] = new Piece(PieceName.Knight, PlayerColor.White);
-            this.blackPieces[`${PieceName.Knight}${i}` as keyof PieceMap] = new Piece(PieceName.Knight, PlayerColor.Black);
+            this.whitePieces[`${PieceName.Knight}${i}` as keyof PieceMap] = {name: PieceName.Knight, color: PlayerColor.White, dead: false};
+            this.blackPieces[`${PieceName.Knight}${i}` as keyof PieceMap] = {name: PieceName.Knight, color: PlayerColor.Black, dead: false};
 
-            this.whitePieces[`${PieceName.Bishop}${i}` as keyof PieceMap] = new Piece(PieceName.Bishop, PlayerColor.White);
-            this.blackPieces[`${PieceName.Bishop}${i}` as keyof PieceMap] = new Piece(PieceName.Bishop, PlayerColor.Black);
+            this.whitePieces[`${PieceName.Bishop}${i}` as keyof PieceMap] = {name: PieceName.Bishop, color: PlayerColor.White, dead: false};
+            this.blackPieces[`${PieceName.Bishop}${i}` as keyof PieceMap] = {name: PieceName.Bishop, color: PlayerColor.Black, dead: false};
         }
 
         for (let i: number = 0; i < 8; i++) {
-            this.whitePieces[`${PieceName.Pawn}${i}` as keyof PieceMap] = new Piece(PieceName.Pawn, PlayerColor.White);
-            this.blackPieces[`${PieceName.Pawn}${i}` as keyof PieceMap] = new Piece(PieceName.Pawn, PlayerColor.Black);
+            this.whitePieces[`${PieceName.Pawn}${i}` as keyof PieceMap] = {name: PieceName.Pawn, color: PlayerColor.White, dead: false};
+            this.blackPieces[`${PieceName.Pawn}${i}` as keyof PieceMap] = {name: PieceName.Pawn, color: PlayerColor.Black, dead: false};
         }
 
 
@@ -148,5 +148,26 @@ export default class Game {
         this.board.moveAttackBoard(attackBoard, destination); 
 
         return this;
+    }
+
+    // TODO: methods for getting individual parts and the entire data
+
+    public getSerializedBoards(): SerializedBoards {
+        return this.board.getSerialized();
+    }
+
+    public getPlayers() {
+        return {
+            playerOne: this.playerOne,
+            playerTwo: this.playerTwo
+        }
+    }
+
+    public getWhitePieces(): PieceMap {
+        return this.whitePieces;
+    }
+
+    public getBlackPieces(): PieceMap {
+        return this.blackPieces;
     }
 }
