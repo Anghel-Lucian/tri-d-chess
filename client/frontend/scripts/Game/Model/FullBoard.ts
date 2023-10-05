@@ -103,6 +103,10 @@ export default class FullBoard {
                         this.cells[row][column] = new Cell(row, column, this.type);
                     }
                 }
+
+                if (this.type === FullBoardType.Middle) {
+                    this.cells[row][column] = new Cell(row, column, this.type);
+                }
             }
         }
 

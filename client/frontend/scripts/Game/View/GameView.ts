@@ -19,11 +19,11 @@ import {
     FULL_BOARD_TYPE_Y_COORDINATE_MAP,
     FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP
 } from './constants';
-import { FullBoardType, PlayerColor } from '../common';
+import { PlayerColor } from '../common';
 
 const cellGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH);
-const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({ color: 0xfffff }); 
-const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({ color: 0x44aa88 }); // TODO: greenish blue, should be some other color
+const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({color: 0xfcfafa}); 
+const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({color: 0xe64578}); 
 
 export default class GameView {
     private canvas: HTMLElement;
@@ -32,14 +32,17 @@ export default class GameView {
     private scene: THREE.Scene;
     private controls: OrbitControls;
     private mainLight: THREE.Light;
+    private static instance: GameView;
 
-    constructor(canvas: HTMLElement) {
+    private constructor(canvas: HTMLElement) {
         this.canvas = canvas; 
         this.renderer = new THREE.WebGLRenderer({antialias: true, canvas: this.canvas});
 
         this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR);
+        this.camera.position.z = 10;
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
 
         // TODO: replace with directional lights or other lights, this is just to see all clearly
         this.mainLight = new THREE.AmbientLight(0xffffff, 1);
@@ -49,10 +52,18 @@ export default class GameView {
         this.scene.add(this.mainLight);
     }
 
+    public static getInstance(canvas: HTMLElement): GameView {
+        if (!this.instance) {
+            this.instance = new GameView(canvas);
+        }
+
+        return this.instance;
+    }
+
     public startRendering(data: ViewData) {
         this.renderFullBoards(data);
 
-        requestAnimationFrame(this.render);
+        requestAnimationFrame(this.render.bind(this));
     }
 
     /**
@@ -70,9 +81,11 @@ export default class GameView {
             this.camera.updateProjectionMatrix();
         }
 
+        this.controls.update();
+
 		this.renderer.render(this.scene, this.camera);
         
-		requestAnimationFrame(this.render);
+		requestAnimationFrame(this.render.bind(this));
     }
 
     private renderFullBoards(data: ViewData) {
@@ -88,28 +101,30 @@ export default class GameView {
       * Render cells of a full board starting at the bottom-right cell
       * TODO: ensure that the cells are ordered first, in order of their coordinates (first 0,0; 0,1 ... 3,3)
       */
-    private renderFullBoard(board: ViewFullBoard, startCoordinates?: ThreeDCoordinates) {
-        // TODO: do we need start coordinates?
-        const currentCoordinates: ThreeDCoordinates = startCoordinates;
+    private renderFullBoard(board: ViewFullBoard) {
         let cellColor: PlayerColor = PlayerColor.White;
 
         for (let cellData of board.cells) {
             const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
             const cell = new THREE.Mesh(cellGeometry, material);
 
-            if (cellColor === PlayerColor.White) {
-                cellColor = PlayerColor.Black;
-            } else {
+            // TODO: I think these cells don't have the correct coloring because they are not ordered
+            if ((cellData.x + 1) % 2 === 0 && (cellData.y + 1) % 2 !== 0) {
                 cellColor = PlayerColor.White;
+            } else if ((cellData.x + 1) % 2 !== 0 && (cellData.y + 1) % 2 === 0) {
+                cellColor = PlayerColor.Black;
+            } else if ((cellData.x + 1) % 2 === 0 && (cellData.y + 1) % 2 === 0) {
+                cellColor = PlayerColor.White;
+            } else if ((cellData.x + 1) % 2 !== 0 && (cellData.y + 1) % 2 !== 0) {
+                cellColor = PlayerColor.Black;
             }
 
-           cell.translateY(FULL_BOARD_TYPE_Y_COORDINATE_MAP[board.type]);
-           cell.translateX(cellData.x);
-           // TODO: unfortunate naming I believe, because the Y on cellData refers to the board
-           // which is a two-d plane. 
-           cell.translateZ(cellData.y + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]);
-            
-           this.scene.add(cell);
+            cell.translateY(FULL_BOARD_TYPE_Y_COORDINATE_MAP[board.type]);
+            cell.translateX(cellData.x);
+            // Unfortunate naming I believe, because the Y on cellData refers to the board which is a 2D plane
+            cell.translateZ(cellData.y + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]);
+
+            this.scene.add(cell);
         }
     }
 

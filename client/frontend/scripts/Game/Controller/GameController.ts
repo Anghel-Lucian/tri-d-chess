@@ -1,23 +1,32 @@
 import Cell from "../Model/Cell";
 import Game from "../Model/Game";
+import GameView from "../View/GameView";
 import { SerializedBoards, SerializedFullBoard } from "../Model/common";
 import { ViewData, ViewCell, ViewAttackBoard } from "../View/utils";
-import { ATTACK_BOARD_DIMENSION, AttackBoardType, FULL_BOARD_DIMENSION, FullBoardType, PieceMap, PlayerColor, getPieceMapDeadPieces } from "../common";
+import {
+    ATTACK_BOARD_DIMENSION,
+    AttackBoardType,
+    FULL_BOARD_DIMENSION,
+    FullBoardType,
+    getPieceMapDeadPieces
+} from "../common";
 
 export default class GameController {
     game: Game;
     data: ViewData;
-    // TODO: the user info would come from another place. Like the user wants a session
-    // he initializes this wish. Then a sessioning service responds to both users
-    // and gives information to each about the other
+    canvas: HTMLElement;
+    view: GameView;
+
     constructor(usernamePlayerOne: string, idPlayerOne: string, usernamePlayerTwo: string, idPlayerTwo: string) {
         this.game = Game.getInstance(usernamePlayerOne, idPlayerOne, usernamePlayerTwo, idPlayerTwo);
-        
-        const viewData = this.formatViewData();
+        this.canvas = document.getElementById('game-container');
 
+        this
+            .formatViewData()
+            .renderView();
     }
 
-    private formatViewData() {
+    private formatViewData(): GameController {
         const {fullBoardTop, fullBoardMiddle, fullBoardBottom}: SerializedBoards = this.game.getSerializedBoards(); 
         const {playerOne, playerTwo} = this.game.getPlayers();
         const whitePieces = this.game.getWhitePieces();
@@ -39,22 +48,20 @@ export default class GameController {
         this.data.deadWhitePieces = getPieceMapDeadPieces(whitePieces);
         this.data.deadBlackPieces = getPieceMapDeadPieces(blackPieces);
 
+        this.formatFullBoard(fullBoardTop);
+        this.formatFullBoard(fullBoardMiddle);
+        this.formatFullBoard(fullBoardBottom);
 
-
-        // TODO: the boards, see ViewData interface from view commons
-        console.log(this.data);
-        console.log(fullBoardTop);
-        console.log(fullBoardMiddle);
-        console.log(fullBoardBottom);
-
+        return this;
     }
 
-    private formatFullBoards(fullBoardData: SerializedFullBoard, fullBoardType: FullBoardType) {
+    private formatFullBoard(fullBoardData: SerializedFullBoard) {
         const cells: ViewCell[] = [];
         const attackBoards: ViewAttackBoard[] = [];
+        const fullBoardType = fullBoardData.type;
 
         for (let i = 0; i < FULL_BOARD_DIMENSION; i++) {
-            for (let j = 0; j < FULL_BOARD_DIMENSION; i++) {
+            for (let j = 0; j < FULL_BOARD_DIMENSION; j++) {
                 cells.push(this.formatCell(fullBoardData.cells[i][j], fullBoardType));
             }
         }
@@ -64,7 +71,7 @@ export default class GameController {
             const attackBoardCells: ViewCell[] = [];
 
             for (let i = 0; i < ATTACK_BOARD_DIMENSION; i++) {
-                for (let j = 0; j < ATTACK_BOARD_DIMENSION; i++) {
+                for (let j = 0; j < ATTACK_BOARD_DIMENSION; j++) {
                     attackBoardCells.push(this.formatCell(fullBoardData.attackBoardLeft.cells[i][j], AttackBoardType.Left));
                 }
             }
@@ -72,6 +79,7 @@ export default class GameController {
             attackBoard.cells = attackBoardCells;
             attackBoard.type = fullBoardData.attackBoardLeft.type;
             attackBoard.color = fullBoardData.attackBoardLeft.color;
+            attackBoard.captured = fullBoardData.attackBoardLeft.captured;
 
             attackBoards.push(attackBoard);
         }
@@ -81,7 +89,7 @@ export default class GameController {
             const attackBoardCells: ViewCell[] = [];
 
             for (let i = 0; i < ATTACK_BOARD_DIMENSION; i++) {
-                for (let j = 0; j < ATTACK_BOARD_DIMENSION; i++) {
+                for (let j = 0; j < ATTACK_BOARD_DIMENSION; j++) {
                     attackBoardCells.push(this.formatCell(fullBoardData.attackBoardRight.cells[i][j], AttackBoardType.Left));
                 }
             }
@@ -89,27 +97,54 @@ export default class GameController {
             attackBoard.cells = attackBoardCells;
             attackBoard.type = fullBoardData.attackBoardRight.type;
             attackBoard.color = fullBoardData.attackBoardRight.color;
+            attackBoard.captured = fullBoardData.attackBoardRight.captured;
 
             attackBoards.push(attackBoard);
         }
 
-        // TODO: add cells and attack boards to the correct full board in ViewData
+        if (fullBoardType === FullBoardType.Top) {
+            this.data.fullBoardTop = {
+                cells,
+                attackBoards,
+                type: fullBoardType
+            }
+        } else if (fullBoardType === FullBoardType.Middle) {
+            this.data.fullBoardMiddle = {
+                cells,
+                attackBoards,
+                type: fullBoardType
+            }
+        } else if (fullBoardType === FullBoardType.Bottom) {
+            this.data.fullBoardBottom = {
+                cells,
+                attackBoards,
+                type: fullBoardType
+            }
+        }
     }
 
     private formatCell(rawCellData: Cell, boardType: FullBoardType | AttackBoardType): ViewCell {
         return {
             x: rawCellData.x,
             y: rawCellData.y,
-            piece: {
+            piece: rawCellData.piece ? {
                 name: rawCellData.piece.name,
                 color: rawCellData.piece.color
-            },
+            } : null,
             boardType,
-            hostedAttackBoard: {
-                type: rawCellData.hostedAttackBoard?.type,
-                color: rawCellData.hostedAttackBoard?.color
-            }
+            hostedAttackBoard: rawCellData.hostedAttackBoard ? {
+                type: rawCellData.hostedAttackBoard.type,
+                color: rawCellData.hostedAttackBoard.color
+            } : null
         }
+    }
+
+    private renderView(): GameController {
+        this.view = GameView.getInstance(this.canvas);                  
+
+        this.view.startRendering(this.data);
+
+        return this;
     }
 
 }

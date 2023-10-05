@@ -17,7 +17,8 @@ export interface ViewCell {
 export interface ViewAttackBoard {
     cells: ViewCell[],
     type: AttackBoardType,
-    color: PlayerColor
+    color: PlayerColor,
+    captured: boolean
 }
 
 export interface ViewFullBoard {

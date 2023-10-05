@@ -7,7 +7,7 @@ const gameController = new GameController("Alexandra", "1", "Lucian", "2");
 
 console.log(gameController);
 
-function main() {
+function main2() {
 
 	const canvas = document.getElementById('game-container');
 	const renderer = new THREE.WebGLRenderer( { antialias: true, canvas } );
@@ -110,5 +110,5 @@ function main() {
 
 }
 
-main();
+//main2();
 
