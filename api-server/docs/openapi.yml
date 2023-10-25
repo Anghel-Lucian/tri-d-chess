@@ -1,0 +1,257 @@
+openapi: 3.0.3
+info:
+  title: TriDChess API
+  description: APIs for the Tri D Chess account creation and validation, player statistics and game records.
+  version: 1.0.0
+servers:
+  - url: https://tridchess.com/api/v1
+tags:
+  - name: User APIs
+    description: Supports general operations of signing in, logging in, getting a player's stats
+  - name: Guest APIs
+    description: Supports operations for guest users
+paths:
+  /sign-in:
+    post:
+      tags:
+        - User APIs
+      summary: Create an account
+      description: Enter a new user's credentials in a data store
+      operationId: signIn
+      requestBody:
+        description: Credentials for the new user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      responses:
+        '200':
+          description: Sign-in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '404':
+          description: User not found in DB
+        '409':
+          description: User with equivalent unique credentials present
+  /log-in:
+    post:
+      tags:
+        - User APIs
+      summary: User log in
+      description: User must provide valid credentials to be authenticated
+      operationId: logIn
+      requestBody:
+        description: Credentials for the existing user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      responses:
+        '200':
+          description: Log-in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '404':
+          description: User not found in DB
+  /stats/{playerId}:
+    get:
+      tags:
+        - User APIs
+      summary: Get a player's statistics
+      description: Returns games played, wins and losses for users that have an account with credentials (not guests)
+      operationId: statsPlayer
+      parameters:
+        - in: path
+          name: playerId
+          schema:
+            type: string
+          required: true
+          description: String ID of the player
+      responses:
+        '200':
+          description: Statistics for player
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Stats'
+        '403':
+          description: Black-listed or unwanted client
+        '500':
+          description: Internal server error
+  /guest:
+    get:
+      tags:
+        - Guest APIs
+      summary: Create a short-lived guest account
+      description: For users who don't wish to create an account or share credentials, create a \"guest\" user instead
+      operationId: guestCreate
+      responses:
+        '200':
+          description: Guest account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Guest'
+        '403':
+          description: Black-listed or unwanted client
+        '500':
+          description: Internal server error
+    post:
+      tags:
+        - Guest APIs
+      summary: Log in into an existing Guest account
+      description: Enter a Guest account that was created prior, data received from the \"GET\" request should be used here
+      operationId: guestLogIn
+      requestBody:
+        description: Credentials for the guest user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Guest'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Guest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Guest'
+        required: true
+      responses:
+        '200':
+          description: Guest log-in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Guest'
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '404':
+          description: Guest not found in DB
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - username
+        - firstName
+        - lastName
+        - email
+        - password
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        username:
+          type: string
+          example: theUser
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: James
+        email:
+          type: string
+          example: john@email.com
+        password:
+          type: string
+          example: '12345'
+      xml:
+        name: user
+    Guest:
+      type: object
+      required:
+        - username
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+          example: theUser
+      xml:
+        name: guest
+    Stats:
+      type: object
+      properties:
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/Match'
+        winRate:
+          type: number
+          format: float
+        wins:
+          type: integer
+          format: int32
+        losses:
+          type: integer
+          format: int32
+        player:
+          $ref: '#/components/schemas/Player'
+      xml: 
+        name: stats
+    Player:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+          example: theUser
+      xml: 
+        name: player
+    Match:
+      type: object
+      properties:
+        winner:
+          $ref: '#/components/schemas/Player'
+        loser:
+          $ref: '#/components/schemas/Player'
+        forfeited:
+          type: boolean
+      xml:
+        name: match
+  

@@ -105,24 +105,24 @@ export default class GameView {
         let cellColor: PlayerColor = PlayerColor.White;
 
         for (let cellData of board.cells) {
-            const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
-            const cell = new THREE.Mesh(cellGeometry, material);
-
             // TODO: I think these cells don't have the correct coloring because they are not ordered
-            if ((cellData.x + 1) % 2 === 0 && (cellData.y + 1) % 2 !== 0) {
+
+            if ((cellData.x + 1) % 2 === 0 && cellData.y === 0) {
                 cellColor = PlayerColor.White;
-            } else if ((cellData.x + 1) % 2 !== 0 && (cellData.y + 1) % 2 === 0) {
+            } else if ((cellData.x + 1) % 2 !== 0 && cellData.y === 0) {
                 cellColor = PlayerColor.Black;
-            } else if ((cellData.x + 1) % 2 === 0 && (cellData.y + 1) % 2 === 0) {
-                cellColor = PlayerColor.White;
-            } else if ((cellData.x + 1) % 2 !== 0 && (cellData.y + 1) % 2 !== 0) {
-                cellColor = PlayerColor.Black;
+            } else {
+                cellColor = cellColor === PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
             }
 
+            const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
+            const cell = new THREE.Mesh(cellGeometry, material);
+            console.log(cellData);
+
             cell.translateY(FULL_BOARD_TYPE_Y_COORDINATE_MAP[board.type]);
-            cell.translateX(cellData.x);
+            cell.translateX((cellData.x + 1) * CELL_WIDTH);
             // Unfortunate naming I believe, because the Y on cellData refers to the board which is a 2D plane
-            cell.translateZ(cellData.y + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]);
+            cell.translateZ((cellData.y + 1) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]);
 
             this.scene.add(cell);
         }

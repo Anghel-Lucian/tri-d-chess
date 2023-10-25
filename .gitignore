@@ -2,6 +2,7 @@ node_modules
 dist
 dist_scripts
 client/dist_scripts
+api-server/dist
 *.log
 package-lock.json
 key.pem
