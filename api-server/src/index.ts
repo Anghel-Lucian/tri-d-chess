@@ -3,20 +3,25 @@ import fs from 'node:fs';
 
 import 'dotenv/config';
 
-import Handler from './Handler.js';
-import RequestHeaders from './types/request-headers.js';
+// TODO: use the parser, logger and sanitizer as well (sanitizer first, then logger, then parser)
+import RequestHandler from '@api/RequestHandler.js';
+import RequestParser from '@api/RequestParser.js';
+import {RequestHeaders} from '@api/types';
 
 const server = createSecureServer({
     key: fs.readFileSync(process.env.PRIVATE_KEY_FILE_PATH, 'utf8'),
     cert: fs.readFileSync(process.env.CERT_FILE_PATH, 'utf8')
 });
 
+const requestParser = new RequestParser();
+
 server.on('error', (error: Error) => {
-    Handler.onError(error);
+    RequestHandler.onError(error);
 });
 
 server.on('stream', (stream: Http2Stream, headers: RequestHeaders) => {
-    Handler.onStream(stream, headers); 
+    requestParser.onStream(stream, headers); 
+    RequestHandler.onStream(stream, headers); 
 });
 
 console.log(`[api-server] listening on ${process.env.PORT}`);

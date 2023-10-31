@@ -10,7 +10,11 @@
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
         "noEmit": false,
-        "types": ["node"]
+        "types": ["node"],
+        "baseUrl": "src",
+        "paths": {
+            "@api/*": ["api/*"]
+        }
     },
     "include": ["src/**/*.ts"]
 }
