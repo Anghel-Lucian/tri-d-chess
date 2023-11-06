@@ -20,7 +20,8 @@ server.on('error', (error: Error) => {
 });
 
 server.on('stream', (stream: Http2Stream, headers: RequestHeaders) => {
-    requestParser.onStream(stream, headers); 
+    const parsedRequest = requestParser.onRequest(stream, headers); 
+    console.log({parsedRequest});
     RequestHandler.onStream(stream, headers); 
 });
 
