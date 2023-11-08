@@ -1,4 +1,6 @@
-export interface ParsedRequest {
+import HTTP_METHODS from "@api/types/method-enum";
+
+export interface ParsedRequestData {
     /**
       * Full path of the request (e.g., '/stats/{playerId}')
       */
@@ -7,24 +9,24 @@ export interface ParsedRequest {
       * Sanitized path relative to available APIs (e.g., '/stats' or '/guest')
       */
     apiPath: string,
-    method: "GET" | "POST",
+    method: HTTP_METHODS,
     parameters?: {[key: string]: string},
     body?: {[key: string]: any}
 }
 
 // TODO: interfaces for each type of request (sign-in, log-in, guest, stats, etc.)
-export interface ParsedRequestSignIn extends ParsedRequest {
+export interface ParsedRequestSignInData extends ParsedRequestData {
 
 }
 
-export interface ParsedRequestLogIn extends ParsedRequest {
+export interface ParsedRequestLogInData extends ParsedRequestData {
 
 }
 
-export interface ParsedRequestGuest extends ParsedRequest {
+export interface ParsedRequestGuestData extends ParsedRequestData {
 
 }
 
-export interface ParsedRequestStats extends ParsedRequest {
+export interface ParsedRequestStatsData extends ParsedRequestData {
 
 }

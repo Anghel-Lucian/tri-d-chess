@@ -85,7 +85,7 @@ paths:
           description: Black-listed or unwanted client
         '404':
           description: User not found in DB
-  /stats/{playerId}:
+  /stats:
     get:
       tags:
         - User APIs
@@ -93,7 +93,7 @@ paths:
       description: Returns games played, wins and losses for users that have an account with credentials (not guests)
       operationId: statsPlayer
       parameters:
-        - in: path
+        - in: query
           name: playerId
           schema:
             type: string

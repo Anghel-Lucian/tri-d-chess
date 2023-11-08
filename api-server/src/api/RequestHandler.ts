@@ -1,25 +1,27 @@
-import { Http2Stream } from "http2";
+import { Http2ServerRequest, Http2ServerResponse } from "node:http2";
 
-import {RequestHeaders} from "@api/types";
+import {ParsedRequestData} from "@api/types";
+import AbstractRequestInterceptor from "@api/AbstractRequestInterceptor.js";
 
-export default class RequestHandler {
-    constructor() {
-
+export default class RequestHandler extends AbstractRequestInterceptor {
+    constructor(interceptor?: AbstractRequestInterceptor) {
+        super(interceptor);
     }
     
     // TODO: create RequestSanitizer or RequestFilter class that makes sure the request is correct
     // and safe, or mark it as malicious or bad otherwise. If the request goes through the filter
     // then pass it to Handler class
-    // TODO: create RequestParser class or method that parses a request's path, parameters and body
-    // and passes it nicely as an object to Handler class
     // TODO: create a Logger class that will take care of all logging without cross-cutting concerns,
     // e.g., runs only on thrown errors or warnings or some special event
-    public static onStream(stream: Http2Stream, headers: RequestHeaders): void {
-        const path: string = headers[':path'];
+    public onRequest(requestData: ParsedRequestData, request: Http2ServerRequest, response: Http2ServerResponse): void {
+        console.log({
+            requestData,
+            request,
+            response
+        });
+        response.end('<h1>Hello from request handler</h1>');
 
-        console.log(path);
-
-        stream.end('<h1>Hello</h1');
+        return;
     }
 
     public static onError(err: Error): void {

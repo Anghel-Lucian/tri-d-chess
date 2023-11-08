@@ -11,6 +11,10 @@ abstract class AbstractRequestInterceptor {
         }
     }
 
+    public setNextInterceptor(interceptor: AbstractRequestInterceptor) {
+        this.nextInterceptor = interceptor;
+    }
+
     // TODO: think whether it is better to create a general request
     // object to get as a parameter here and also pass it to onRequest in next() 
     abstract onRequest(...args: any[]): any;
@@ -23,9 +27,11 @@ abstract class AbstractRequestInterceptor {
       * The arbitrary arguments are passed to the onRequest method
       * to ensure the next interceptor has something to intercept...
       */
-    protected next(...args: any[]): AbstractRequestInterceptor {
-        this.nextInterceptor?.onRequest(args);
-        return this; 
+    protected next(...args: any[]): any {
+        const result = this.nextInterceptor?.onRequest(...args);
+
+        console.log({result});
+        return result;
     }
 }
 

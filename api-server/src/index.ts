@@ -14,16 +14,25 @@ const server = createSecureServer({
 });
 
 const requestParser = new RequestParser();
+const requestHandler = new RequestHandler();
+
+requestParser.setNextInterceptor(requestHandler);
 
 server.on('error', (error: Error) => {
     RequestHandler.onError(error);
 });
 
-server.on('stream', (stream: Http2Stream, headers: RequestHeaders) => {
-    const parsedRequest = requestParser.onRequest(stream, headers); 
-    console.log({parsedRequest});
-    RequestHandler.onStream(stream, headers); 
+server.on('request', (request, response) => {
+    console.log("Processing request");
+
+    requestParser.onRequest(request, response);
 });
+
+/*
+server.on('stream', (stream: Http2Stream, headers: RequestHeaders) => {
+    requestParser.onRequest(stream, headers); 
+});
+*/
 
 console.log(`[api-server] listening on ${process.env.PORT}`);
 server.listen(process.env.PORT);

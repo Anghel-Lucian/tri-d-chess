@@ -1,13 +1,11 @@
-import { Http2Stream } from "http2";
+import { Http2ServerRequest, Http2ServerResponse } from "http2";
 import {
-    ParsedRequest, 
-    ParsedRequestSignIn, 
-    ParsedRequestLogIn, 
-    ParsedRequestGuest, 
-    ParsedRequestStats,
-    RequestHeaders,
+    ParsedRequestSignInData, 
+    ParsedRequestLogInData, 
+    ParsedRequestGuestData, 
+    ParsedRequestStatsData,
     HTTP_METHODS
-} from "@api/types";
+} from "@api/types/index.js";
 import AbstractRequestInterceptor from "@api/AbstractRequestInterceptor.js";
 import { API_ROUTES } from "@api/constants/index.js";
 
@@ -25,61 +23,103 @@ export default class RequestParser extends AbstractRequestInterceptor {
         super(interceptor);
     }
 
-    public onRequest(stream: Http2Stream, headers: RequestHeaders) {
-        const path: string = headers[':path'];
-        const method: string = headers[':method']; 
+    public onRequest(request: Http2ServerRequest, response: Http2ServerResponse) {
+        const path: string = request.headers[':path'];
+        const unparsedMethod: string = request.headers[':method']; 
+        let method: HTTP_METHODS = HTTP_METHODS.GET;
 
-        console.log({method});
-        let parsedRequest: ParsedRequest = null;
-
-        if (path === API_ROUTES.SIGN_IN) {
-            parsedRequest = this.onSignIn(stream, headers, path, method);
-        } else if (path === API_ROUTES.LOG_IN) {
-            parsedRequest = this.onLogIn(stream, headers, path, method);
-        } else if (path === API_ROUTES.GUEST) {
-            parsedRequest = this.onGuest(stream, headers, path, method);
-        } else if (/stats\/[a-zA-Z0-9]*/.test(path)) {
-            parsedRequest = this.onStats(stream, headers, path, method);
+        if (unparsedMethod?.toLowerCase() === "post") {
+            method = HTTP_METHODS.POST;
         }
 
-        this.next(parsedRequest);
+        if (path === API_ROUTES.SIGN_IN && method === HTTP_METHODS.POST) {
+            this.onSignIn(request, response, path, method);
+        } else if (path === API_ROUTES.LOG_IN && method === HTTP_METHODS.POST) {
+            this.onLogIn(request, response, path, method);
+        } else if (path === API_ROUTES.GUEST) {
+            this.onGuest(request, response, path, method);
+        } else if (/stats\?[a-zA-Z0-9]*/.test(path) && method === HTTP_METHODS.GET) {
+            this.onStats(request, response, path, method);
+        }
     }
 
-    // TODO: actual implementation
-    // TODO: the method should be an enum of HTTP_METHODS.GET or HTTP_METHODS.POST instead of a string, handle in onRequest
-    private onSignIn(stream: Http2Stream, headers: RequestHeaders, path: string, method: string): ParsedRequestSignIn {
+    private onSignIn(request: Http2ServerRequest, response: Http2ServerResponse, path: string, method: HTTP_METHODS) {
         const chunks: Buffer[] = [];
         let fullResponseBuffer: Buffer;
-        stream
+
+        request 
             .on('data', (chunk: Buffer) => chunks.push(chunk))
             .on('end', () => {
                 fullResponseBuffer = Buffer.concat(chunks);
-                const parsedRequest: ParsedRequestSignIn = {
+                const parsedRequestData: ParsedRequestSignInData = {
                     path,
                     apiPath: API_ROUTES.SIGN_IN,
                     method,
                     body: JSON.parse(fullResponseBuffer.toString())
                 };
 
-                console.log({
-                    fullResponseBuffer,
-                    fullResponseBufferString: fullResponseBuffer.toString(),
-                    fullResponseBufferJSON: JSON.parse(fullResponseBuffer.toString())
-                });
+                return this.next(parsedRequestData, request, response);
             });
-
-        return null;        
     }
 
-    private onLogIn(stream: Http2Stream, headers: RequestHeaders, path: string, method: string): ParsedRequestLogIn {
-        return null;
+    private onLogIn(request: Http2ServerRequest, response: Http2ServerResponse, path: string, method: HTTP_METHODS) {
+        const chunks: Buffer[] = [];
+        let fullResponseBuffer: Buffer;
+
+        request 
+            .on('data', (chunk: Buffer) => chunks.push(chunk))
+            .on('end', () => {
+                fullResponseBuffer = Buffer.concat(chunks);
+                const parsedRequestData: ParsedRequestLogInData = {
+                    path,
+                    apiPath: API_ROUTES.LOG_IN,
+                    method,
+                    body: JSON.parse(fullResponseBuffer.toString())
+                };
+
+                return this.next(parsedRequestData, request, response);
+            });
     }
     
-    private onGuest(stream: Http2Stream, headers: RequestHeaders, path: string, method: string): ParsedRequestGuest {
-        return null;
+    private onGuest(request: Http2ServerRequest, response: Http2ServerResponse, path: string, method: HTTP_METHODS) {
+        const chunks: Buffer[] = [];
+        let fullResponseBuffer: Buffer;
+
+        request 
+            .on('data', (chunk: Buffer) => chunks.push(chunk))
+            .on('end', () => {
+                fullResponseBuffer = Buffer.concat(chunks);
+                const parsedRequestData: ParsedRequestGuestData = {
+                    path,
+                    apiPath: API_ROUTES.GUEST,
+                    method,
+                    body: JSON.parse(fullResponseBuffer.toString())
+                };
+
+                return this.next(parsedRequestData, request, response);
+            });
     }
 
-    private onStats(stream: Http2Stream, headers: RequestHeaders, path: string, method: string): ParsedRequestStats {
-        return null;
+    private onStats(request: Http2ServerRequest, response: Http2ServerResponse, path: string, method: HTTP_METHODS) {
+        request 
+            .on('end', () => {
+                const stringParameters = path.slice(path.indexOf('?') + 1).split('&');
+                const parsedParameters: {[key: string]: string} = {};
+
+                for (const parameter of stringParameters) {
+                    const [name, _, value] = parameter.split('=');
+
+                    parsedParameters[name] = value;
+                }
+
+                const parsedRequestData: ParsedRequestStatsData = {
+                    path,
+                    apiPath: API_ROUTES.STATS,
+                    method,
+                    parameters: parsedParameters
+                };
+
+                return this.next(parsedRequestData, request, response);
+            });
     }
 }
