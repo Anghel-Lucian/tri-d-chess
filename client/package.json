@@ -6,27 +6,29 @@
     "type": "module",
     "scripts": {
         "start": "./node_modules/nodemon/bin/nodemon.js index.js -r dotenv/config dotenv_config_path=./.env",
-        "build:ui": "npm link webpack && webpack --config webpack.config.cjs",
+        "build:ui": "./node_modules/webpack/bin/webpack.js --config webpack.config.cjs",
+        "build:start": "npm run build:ui && npm run start",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "dotenv": "^16.3.1",
-        "lil-gui": "^0.18.2",
-        "three": "^0.156.1"
+        "dotenv": "16.3.1",
+        "lil-gui": "0.18.2",
+        "three": "0.156.1"
     },
     "devDependencies": {
-        "@types/three": "^0.156.0",
-        "@typescript-eslint/eslint-plugin": "^6.7.0",
-        "@typescript-eslint/parser": "^6.7.0",
-        "css-loader": "^6.8.1",
-        "eslint": "^8.48.0",
-        "html-webpack-plugin": "^5.5.3",
-        "mini-css-extract-plugin": "^2.7.6",
-        "nodemon": "^3.0.1",
-        "style-loader": "^3.3.3",
-        "ts-loader": "^9.4.4",
-        "typescript": "^5.2.2"
+        "@types/three": "0.156.0",
+        "@typescript-eslint/eslint-plugin": "6.7.0",
+        "@typescript-eslint/parser": "6.7.0",
+        "css-loader": "6.8.1",
+        "eslint": "8.48.0",
+        "html-webpack-plugin": "5.5.3",
+        "mini-css-extract-plugin": "2.7.6",
+        "nodemon": "3.0.1",
+        "style-loader": "3.3.3",
+        "ts-loader": "9.4.4",
+        "typescript": "5.2.2",
+        "webpack-cli": "5.1.4"
     }
 }

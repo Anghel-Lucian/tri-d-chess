@@ -55,7 +55,7 @@ export default class GameController {
         return this;
     }
 
-    private formatFullBoard(fullBoardData: SerializedFullBoard) {
+    private formatFullBoard(fullBoardData: SerializedFullBoard): GameController {
         const cells: ViewCell[] = [];
         const attackBoards: ViewAttackBoard[] = [];
         const fullBoardType = fullBoardData.type;
@@ -121,6 +121,8 @@ export default class GameController {
                 type: fullBoardType
             }
         }
+
+        return this;
     }
 
     private formatCell(rawCellData: Cell, boardType: FullBoardType | AttackBoardType): ViewCell {

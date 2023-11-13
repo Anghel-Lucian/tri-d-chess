@@ -6,6 +6,8 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 
 import { ThreeDCoordinates, ViewData, ViewFullBoard } from "./utils";
 import { 
@@ -39,7 +41,9 @@ export default class GameView {
         this.renderer = new THREE.WebGLRenderer({antialias: true, canvas: this.canvas});
 
         this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR);
-        this.camera.position.z = 10;
+        this.camera.position.z = 25;
+        this.camera.position.y = 15;
+        this.camera.position.x = 10;
 
         this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
@@ -48,7 +52,20 @@ export default class GameView {
         this.mainLight = new THREE.AmbientLight(0xffffff, 1);
 
         this.scene = new THREE.Scene();
- 
+
+        const mtlLoader = new MTLLoader();
+        const objLoader = new OBJLoader();
+
+        const scene = this.scene;
+
+        mtlLoader.load("assets/chess-pieces/Bishop.mtl", (materials) => {
+            materials.preload();
+            
+            objLoader.setMaterials(materials);
+            objLoader.load("assets/chess-pieces/Bishop.obj", (object) => {
+                scene.add(object);
+            });
+        });
         this.scene.add(this.mainLight);
     }
 
@@ -104,9 +121,7 @@ export default class GameView {
     private renderFullBoard(board: ViewFullBoard) {
         let cellColor: PlayerColor = PlayerColor.White;
 
-        for (let cellData of board.cells) {
-            // TODO: I think these cells don't have the correct coloring because they are not ordered
-
+        for (const cellData of board.cells) {
             if ((cellData.x + 1) % 2 === 0 && cellData.y === 0) {
                 cellColor = PlayerColor.White;
             } else if ((cellData.x + 1) % 2 !== 0 && cellData.y === 0) {
@@ -117,12 +132,13 @@ export default class GameView {
 
             const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
             const cell = new THREE.Mesh(cellGeometry, material);
-            console.log(cellData);
 
             cell.translateY(FULL_BOARD_TYPE_Y_COORDINATE_MAP[board.type]);
             cell.translateX((cellData.x + 1) * CELL_WIDTH);
             // Unfortunate naming I believe, because the Y on cellData refers to the board which is a 2D plane
             cell.translateZ((cellData.y + 1) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]);
+
+            console.log(cellData.piece);
 
             this.scene.add(cell);
         }

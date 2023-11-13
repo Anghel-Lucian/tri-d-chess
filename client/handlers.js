@@ -10,7 +10,9 @@ const ASSET_EXTENSION_MIME_TYPE_MAP = {
     ".js": "text/javascript",
     ".css": "text/css; charset=utf-8",
     ".png": "image/png",
-    ".svg": "image/svg+xml"
+    ".svg": "image/svg+xml",
+    ".mtl": "text/plain",
+    ".obj": "text/plain" 
 };
 
 function respondWithContentType(err, data, stream, mimeType = "") {
@@ -58,10 +60,20 @@ function respondWithSVG(err, data, stream) {
     return respondWithContentType(err, data, stream, ASSET_EXTENSION_MIME_TYPE_MAP[".svg"]);
 }
 
+function respondWithMTL(err, data, stream) {
+    return respondWithContentType(err, data, stream, ASSET_EXTENSION_MIME_TYPE_MAP[".mtl"]);
+}
+
+function respondWithOBJ(err, data, stream) {
+    return respondWithContentType(err, data, stream, ASSET_EXTENSION_MIME_TYPE_MAP[".obj"]);
+}
+
 export {
 	respondWithHTML,
     respondWithJS,
     respondWithCSS,
     respondWithPNG,
-    respondWithSVG
+    respondWithSVG,
+    respondWithMTL,
+    respondWithOBJ
 };

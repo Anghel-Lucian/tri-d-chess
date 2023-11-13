@@ -12,7 +12,9 @@ import {
     respondWithJS,
     respondWithCSS,
     respondWithPNG,
-    respondWithSVG
+    respondWithSVG,
+    respondWithMTL,
+    respondWithOBJ
 } from "./handlers.js";
 
 const server = http2.createSecureServer({
@@ -40,6 +42,10 @@ server.on("stream", (stream, headers) => {
                 return respondWithPNG(err, data, stream);
             } else if (assetExtension === ".svg") {
                 return respondWithSVG(err, data, stream);
+            } else if (assetExtension === ".mtl") {
+                return respondWithMTL(err, data, stream);
+            } else if (assetExtension === ".obj") {
+                return respondWithOBJ(err, data, stream);
             } else {
                 // TODO: check headers to be appropriate for this error
                 stream.respond({
