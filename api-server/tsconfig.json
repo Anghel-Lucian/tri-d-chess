@@ -13,7 +13,8 @@
         "types": ["node"],
         "baseUrl": "src",
         "paths": {
-            "@api/*": ["api/*"]
+            "@api/*": ["api/*"],
+            "@model/*": ["model/*"]
         }
     },
     "include": ["src/**/*.ts"]

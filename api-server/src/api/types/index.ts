@@ -4,4 +4,4 @@
   */
 export * from '@api/types/parsed-requests.js';
 export * from '@api/types/request-headers.js';
-export {default as HTTP_METHODS} from '@api/types/method-enum.js';
+

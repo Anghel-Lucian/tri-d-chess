@@ -12,4 +12,8 @@ export const API_ROUTES = {
     GUEST: "/" + APIS.GUEST
 }
 
+export enum HTTP_METHODS {
+    GET = "get",
+    POST = "post"
+}
 

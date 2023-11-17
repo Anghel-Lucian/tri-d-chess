@@ -1,13 +1,13 @@
 openapi: 3.0.3
 info:
   title: TriDChess API
-  description: APIs for the Tri D Chess account creation and validation, player statistics and game records.
+  description: APIs for the Tri D Chess account creation and validation, user statistics and game records.
   version: 1.0.0
 servers:
   - url: https://tridchess.com/api/v1
 tags:
   - name: User APIs
-    description: Supports general operations of signing in, logging in, getting a player's stats
+    description: Supports general operations of signing in, logging in, getting a user's stats
   - name: Guest APIs
     description: Supports operations for guest users
 paths:
@@ -89,19 +89,19 @@ paths:
     get:
       tags:
         - User APIs
-      summary: Get a player's statistics
+      summary: Get a user's statistics
       description: Returns games played, wins and losses for users that have an account with credentials (not guests)
-      operationId: statsPlayer
+      operationId: statsUser
       parameters:
         - in: query
-          name: playerId
+          name: userId
           schema:
             type: string
           required: true
-          description: String ID of the player
+          description: String ID of the user
       responses:
         '200':
-          description: Statistics for player
+          description: Statistics for user
           content:
             application/json:
               schema:
@@ -181,9 +181,8 @@ components:
         - password
       properties:
         id:
-          type: integer
-          format: int64
-          example: 10
+          type: string
+          format: uuid
         username:
           type: string
           example: theUser
@@ -208,6 +207,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         username:
           type: string
           example: theUser
@@ -215,11 +215,17 @@ components:
         name: guest
     Stats:
       type: object
+      required:
+        - id
+        - user
       properties:
+        id:
+          type: string
+          format: uuid
         games:
           type: array
           items:
-            $ref: '#/components/schemas/Match'
+            $ref: '#/components/schemas/Game'
         winRate:
           type: number
           format: float
@@ -229,29 +235,27 @@ components:
         losses:
           type: integer
           format: int32
-        player:
-          $ref: '#/components/schemas/Player'
+        user:
+          $ref: '#/components/schemas/User'
       xml: 
         name: stats
-    Player:
+    Game:
       type: object
+      required:
+        - id
+        - winner
+        - loser
+        - forfeited
       properties:
         id:
           type: string
-        username:
-          type: string
-          example: theUser
-      xml: 
-        name: player
-    Match:
-      type: object
-      properties:
+          format: uuid
         winner:
-          $ref: '#/components/schemas/Player'
+          $ref: '#/components/schemas/User'
         loser:
-          $ref: '#/components/schemas/Player'
+          $ref: '#/components/schemas/User'
         forfeited:
           type: boolean
       xml:
-        name: match
+        name: game
   

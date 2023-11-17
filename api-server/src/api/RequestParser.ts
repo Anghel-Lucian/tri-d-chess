@@ -3,17 +3,15 @@ import {
     ParsedRequestSignInData, 
     ParsedRequestLogInData, 
     ParsedRequestGuestData, 
-    ParsedRequestStatsData,
-    HTTP_METHODS
+    ParsedRequestStatsData
 } from "@api/types/index.js";
+import { APIS, API_ROUTES, HTTP_METHODS } from "@api/constants/index.js";
 import AbstractRequestInterceptor from "@api/AbstractRequestInterceptor.js";
-import { API_ROUTES } from "@api/constants/index.js";
 
 /**
-  * Class that parses stream and headers object to obtain data 
+  * Class that parses request object to obtain data 
   * such as path, parameters, body, method. The collected data is 
-  * returned as a unified request object with a specific interface
-  * defined by the programmer.
+  * returned as a unified request data object with a specific interface.
   *
   * This class will only get valid API requests because of the filter before it:
   * RequestFilter
@@ -53,7 +51,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
                 fullResponseBuffer = Buffer.concat(chunks);
                 const parsedRequestData: ParsedRequestSignInData = {
                     path,
-                    apiPath: API_ROUTES.SIGN_IN,
+                    apiPath: APIS.SIGN_IN, 
                     method,
                     body: JSON.parse(fullResponseBuffer.toString())
                 };
@@ -72,7 +70,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
                 fullResponseBuffer = Buffer.concat(chunks);
                 const parsedRequestData: ParsedRequestLogInData = {
                     path,
-                    apiPath: API_ROUTES.LOG_IN,
+                    apiPath: APIS.LOG_IN,
                     method,
                     body: JSON.parse(fullResponseBuffer.toString())
                 };
@@ -91,7 +89,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
                 fullResponseBuffer = Buffer.concat(chunks);
                 const parsedRequestData: ParsedRequestGuestData = {
                     path,
-                    apiPath: API_ROUTES.GUEST,
+                    apiPath: APIS.GUEST,
                     method,
                     body: JSON.parse(fullResponseBuffer.toString())
                 };
@@ -102,6 +100,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
 
     private onStats(request: Http2ServerRequest, response: Http2ServerResponse, path: string, method: HTTP_METHODS) {
         request 
+            .on('data', () => {}) // 'end' event will not fire if there's no handler for the 'data' event
             .on('end', () => {
                 const stringParameters = path.slice(path.indexOf('?') + 1).split('&');
                 const parsedParameters: {[key: string]: string} = {};
@@ -114,7 +113,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
 
                 const parsedRequestData: ParsedRequestStatsData = {
                     path,
-                    apiPath: API_ROUTES.STATS,
+                    apiPath: APIS.STATS,
                     method,
                     parameters: parsedParameters
                 };
