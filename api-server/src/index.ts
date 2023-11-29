@@ -25,7 +25,7 @@ server.on('error', (error: Error) => {
 server.on('request', (request, response) => {
     console.log('Processing request');
     const dbInstance = DBConnection.getInstance();
-    dbInstance.createNewUser();
+    dbInstance.createNewUser("Lucian", "lucian@email.com", "verysecurepassword");
     requestParser.onRequest(request, response);
 });
 

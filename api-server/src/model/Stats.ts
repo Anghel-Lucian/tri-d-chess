@@ -7,22 +7,22 @@ export default class Stats extends AbstractEntity {
     private losses: number;
     private userId: string;
 
-    constructor(wins: number, losses: number, winRate?: number, userId?: string, id?: string) {
+    constructor(wins: number, losses: number, winRate?: number, id?: string, userId?: string) {
         super();
 
         this.wins = wins;
         this.losses = losses;
 
-        if (winRate) {
+        if (typeof winRate === 'number') {
             this.winRate = winRate;
-        }
-
-        if (userId) {
-            this.userId = userId;
         }
 
         if (id) {
             this.id = id;
+        }
+
+        if (userId) {
+            this.userId = userId;
         }
     }
 
@@ -49,5 +49,9 @@ export default class Stats extends AbstractEntity {
 
     public getUserId(): string {
         return this.userId;
+    }
+
+    public getId(): string {
+        return this.id;
     }
 }

@@ -7,7 +7,7 @@ export default class User extends AbstractEntity {
     private password: string;
     private statsId: string;
 
-    constructor(username: string, email: string, password: string, statsId: string, id?: string) {
+    constructor(username: string, email: string, password: string, statsId?: string, id?: string) {
         super();
 
         this.username = username;
