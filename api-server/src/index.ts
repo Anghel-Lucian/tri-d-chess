@@ -32,3 +32,17 @@ server.on('request', (request, response) => {
 console.log(`[api-server] listening on ${process.env.PORT}`);
 server.listen(process.env.PORT);
 
+function gracefulShutdown(signal: string) {
+    console.info(`[api-server] ${signal} signal received`);
+    console.log('[api-server] Shutting down HTTP server');
+    server.close(async () => {
+        console.log('[api-server] HTTP server shut down');
+
+        console.log('[api-server] Closing DB connections');
+        await DBConnection.getInstance().closeConnections();
+        console.log('[api-server] DB connections closed');
+    });
+}
+
+process.on('SIGTERM', gracefulShutdown.bind(null, 'SIGTERM'));
+process.on('SIGINT', gracefulShutdown.bind(null, 'SIGINT'));

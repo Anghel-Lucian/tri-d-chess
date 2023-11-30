@@ -56,21 +56,20 @@ export default class DBConnection {
     public async createNewUser(username: string, email: string, password: string) {
         const client = await this.pool.connect();
 
-        console.log("creating new user");
-
         try {
             const stats = await this.insertStats(client, 0, 0); 
             const userData = await this.insertUser(client, username, email, password, stats.getId());
 
-            console.log({userData});
-            
             return userData;
         } catch (err) {
             this.onClientError(err, client);
+        } finally {
+            client.release();
         }
 
     }
 
+    // TODO: you need to do a transaction or something like that, you're modifying two tables with POST data
     public async insertUser(client: pg.PoolClient, username: string, email: string, password: string, statsId: string) {
         const valuesArray = [statsId, username, email, password];
         const query = `INSERT INTO ${TABLES.USERS} (statsId, username, email, password) VALUES ($1, $2, $3, $4) RETURNING uid, username, email, password, statsId`;
@@ -148,5 +147,9 @@ export default class DBConnection {
     private onClientError(err: Error, client: pg.PoolClient): void {
         console.error(err);
         client.release();
+    }
+
+    public async closeConnections(): Promise<void> {
+        await this.pool.end();
     }
 }
