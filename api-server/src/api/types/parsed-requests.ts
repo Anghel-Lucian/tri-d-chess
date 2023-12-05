@@ -1,4 +1,4 @@
-import HTTP_METHODS from "@api/types/method-enum";
+import { HTTP_METHODS } from "@api/types/index.js";
 
 export interface ParsedRequestData {
     /**
@@ -8,25 +8,32 @@ export interface ParsedRequestData {
     /**
       * Sanitized path relative to available APIs (e.g., '/stats' or '/guest')
       */
-    apiPath: string,
+    api: string,
     method: HTTP_METHODS,
     parameters?: {[key: string]: string},
     body?: {[key: string]: any}
 }
 
-// TODO: interfaces for each type of request (sign-in, log-in, guest, stats, etc.)
-export interface ParsedRequestSignInData extends ParsedRequestData {
-
-}
-
-export interface ParsedRequestLogInData extends ParsedRequestData {
-
+export interface ParsedRequestUserData extends ParsedRequestData {
+    body: {
+        id?: string,
+        username: string,
+        firstName: string,
+        lastName: string,
+        email: string,
+        password: string
+    }
 }
 
 export interface ParsedRequestGuestData extends ParsedRequestData {
-
+    body: {
+        id?: string,
+        username: string
+    }
 }
 
 export interface ParsedRequestStatsData extends ParsedRequestData {
-
+    parameters: {
+        userId: string
+    }
 }

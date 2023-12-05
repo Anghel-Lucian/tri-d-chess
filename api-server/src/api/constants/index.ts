@@ -12,8 +12,24 @@ export const API_ROUTES = {
     GUEST: "/" + APIS.GUEST
 }
 
-export enum HTTP_METHODS {
-    GET = "get",
-    POST = "post"
+export const API_ROUTES_REGEXES = {
+    STATS: /stats\?[a-zA-Z0-9]*/
 }
 
+export enum HTTP_CODES {
+    SUCCESS = 200,
+    BAD_REQUEST = 400,
+    BLACK_LISTED = 403,
+    NOT_FOUND = 404,
+    RESOURCE_ALREADY_EXISTS = 409,
+    INTERNAL_ERROR = 500
+}
+
+export const HTTP_CODES_DESCRIPTIONS = {
+    [HTTP_CODES.SUCCESS]: 'Successful request',
+    [HTTP_CODES.BAD_REQUEST]: 'Bad request. Check OpenAPI specification',
+    [HTTP_CODES.BLACK_LISTED]: '',
+    [HTTP_CODES.NOT_FOUND]: 'Resource not found',
+    [HTTP_CODES.RESOURCE_ALREADY_EXISTS]: 'Resource already exists',
+    [HTTP_CODES.INTERNAL_ERROR]: 'Interval server error'
+}

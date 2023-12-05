@@ -1,7 +1,6 @@
 import pg from 'pg';
 import 'dotenv/config';
 import User from '@model/User.js';
-import Stats from '@model/Stats.js';
 
 const TABLES = {
     USERS: "users",
@@ -19,7 +18,6 @@ const dbClientConfig: pg.ClientConfig = {
     port: Number(process.env.DB_PORT)
 };
 
-// TODO: complete this table
 /**
   * The pg package does not keep track of the type in Postgres.
   * When a number column is queried, the result might be a string.
@@ -30,6 +28,10 @@ const dbColumnsTypesTable: {[key: string]: string} = {
     wins: 'number',
     losses: 'number',
     winrate: 'number',
+    username: 'string',
+    email: 'string',
+    statsid: 'string',
+    password: 'string',
     uid: 'string'
 };
 
@@ -53,38 +55,58 @@ export default class DBConnection {
         return this.instance;
     }
 
-    public async createNewUser(username: string, email: string, password: string) {
+    public async createNewUser(username: string, email: string, password: string): Promise<User> {
         const client = await this.pool.connect();
 
         try {
-            const stats = await this.insertStats(client, 0, 0); 
-            const userData = await this.insertUser(client, username, email, password, stats.getId());
+            // Begin transaction
+            await client.query('BEGIN');
 
-            return userData;
+            // Inserting stats
+            const statsQueryOptions = {
+                values: [0, 0],
+                text: `INSERT INTO ${TABLES.STATS} (wins, losses) VALUES ($1, $2) RETURNING uid, wins, losses, winRate`
+            };
+
+            const resultStats = await client.query({
+                ...statsQueryOptions,
+                rowMode: 'array'
+            });
+
+            const dataStats = this.parseDBResult(resultStats);
+
+            // Inserting user
+            const userQueryOptions = {
+                values: [username, email, password, dataStats.uid],
+                text: `INSERT INTO ${TABLES.USERS} (username, email, password, statsId) VALUES ($1, $2, $3, $4) RETURNING uid, username, email, password, statsId`
+            };
+
+            const resultUser = await client.query({
+                ...userQueryOptions,
+                rowMode: 'array'
+            });
+
+            const dataUser = this.parseDBResult(resultUser);
+
+            // Commit transaction
+            await client.query('COMMIT');
+
+            return new User(dataUser.username, dataUser.email, dataUser.password, dataUser.statsid, dataUser.uid);
         } catch (err) {
-            this.onClientError(err, client);
+            // Rollback transaction in case of error
+            await client.query('ROLLBACK');
+            this.onClientError(err);
         } finally {
             client.release();
         }
-
     }
 
-    // TODO: you need to do a transaction or something like that, you're modifying two tables with POST data
-    public async insertUser(client: pg.PoolClient, username: string, email: string, password: string, statsId: string) {
-        const valuesArray = [statsId, username, email, password];
-        const query = `INSERT INTO ${TABLES.USERS} (statsId, username, email, password) VALUES ($1, $2, $3, $4) RETURNING uid, username, email, password, statsId`;
-
-        const result = await client.query({
-            text: query, 
-            values: valuesArray,
-            rowMode: 'array'
-        });
-
+    private parseDBResult(result: pg.QueryArrayResult<any[]>) {
         if (result.fields?.length === 0 || result.rows?.length === 0) {
-            throw new Error("[DBConnection:insertUser]: inserted user returned fields are empty");
+            throw new Error("[DBConnection:parseDBResult]: parsing didn't function. Result is empty or doesn't have fields or rows.");
         }
 
-        const insertedUserData: any = {};
+        const parsedResult: any = {};
   
         for (let i = 0; i < result.fields.length; i++) {
             const columnName = result.fields[i].name;
@@ -92,61 +114,25 @@ export default class DBConnection {
 
             switch (dbColumnsTypesTable[columnName]) {
                 case 'number':
-                    insertedUserData[columnName] = Number(value);
+                    parsedResult[columnName] = Number(value);
                     break;
                 case 'string':
-                    insertedUserData[columnName] = String(value);
+                    parsedResult[columnName] = String(value);
                     break;
                 default:
-                    insertedUserData[columnName] = value;
+                    parsedResult[columnName] = value;
             }
         }
 
-        return new User(insertedUserData.username, insertedUserData.email, insertedUserData.password, insertedUserData.statsid, insertedUserData.uid);
-    }
-
-    public async insertStats(client: pg.PoolClient, wins: number, losses: number): Promise<Stats> {
-        const valuesArray = [wins, losses];
-        const query = `INSERT INTO ${TABLES.STATS} (wins, losses) VALUES ($1, $2) RETURNING uid, wins, losses, winRate`;
-
-        const result = await client.query({
-            text: query, 
-            values: valuesArray,
-            rowMode: 'array'
-        });
-
-        if (result.fields?.length === 0 || result.rows?.length === 0) {
-            throw new Error("[DBConnection:insertStats]: inserted stats returned fields are empty");
-        }
-
-        const insertedStatsData: any = {};
-  
-        for (let i = 0; i < result.fields.length; i++) {
-            const columnName = result.fields[i].name;
-            const value = result.rows[0][i];
-
-            switch (dbColumnsTypesTable[columnName]) {
-                case 'number':
-                    insertedStatsData[columnName] = Number(value);
-                    break;
-                case 'string':
-                    insertedStatsData[columnName] = String(value);
-                    break;
-                default:
-                    insertedStatsData[columnName] = value;
-            }
-        }
-
-        return new Stats(insertedStatsData.wins, insertedStatsData.losses, insertedStatsData.winrate, insertedStatsData.uid);
+        return parsedResult;
     }
 
     private onPoolError(err: Error, client: pg.PoolClient): void {
 
     }
 
-    private onClientError(err: Error, client: pg.PoolClient): void {
+    private onClientError(err: Error): void {
         console.error(err);
-        client.release();
     }
 
     public async closeConnections(): Promise<void> {

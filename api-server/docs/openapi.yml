@@ -49,6 +49,8 @@ paths:
           description: User not found in DB
         '409':
           description: User with equivalent unique credentials present
+        '500':
+          description: Internal server error
   /log-in:
     post:
       tags:
@@ -85,6 +87,8 @@ paths:
           description: Black-listed or unwanted client
         '404':
           description: User not found in DB
+        '500':
+          description: Internal server error
   /stats:
     get:
       tags:
@@ -114,26 +118,6 @@ paths:
         '500':
           description: Internal server error
   /guest:
-    get:
-      tags:
-        - Guest APIs
-      summary: Create a short-lived guest account
-      description: For users who don't wish to create an account or share credentials, create a \"guest\" user instead
-      operationId: guestCreate
-      responses:
-        '200':
-          description: Guest account created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Guest'          
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Guest'
-        '403':
-          description: Black-listed or unwanted client
-        '500':
-          description: Internal server error
     post:
       tags:
         - Guest APIs
@@ -169,6 +153,8 @@ paths:
           description: Black-listed or unwanted client
         '404':
           description: Guest not found in DB
+        '500':
+          description: Internal server error
 components:
   schemas:
     User:
@@ -258,4 +244,4 @@ components:
           type: boolean
       xml:
         name: game
-  
+   

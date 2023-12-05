@@ -1,8 +1,9 @@
 import { Http2ServerRequest, Http2ServerResponse } from "node:http2";
 
-import {ParsedRequestData} from "@api/types/index.js";
-import {APIS, HTTP_METHODS} from "@api/constants/index.js";
+import {ParsedRequestData, HTTP_METHODS} from "@api/types/index.js";
+import {APIS} from "@api/constants/index.js";
 import AbstractRequestInterceptor from "@api/AbstractRequestInterceptor.js";
+import Model from "@model/index.js";
 
 export default class RequestHandler extends AbstractRequestInterceptor {
     constructor(interceptor?: AbstractRequestInterceptor) {
@@ -15,9 +16,10 @@ export default class RequestHandler extends AbstractRequestInterceptor {
     // TODO: create a Logger class that will take care of all logging without cross-cutting concerns,
     // e.g., runs only on thrown errors or warnings or some special event
     public onRequest(requestData: ParsedRequestData, request: Http2ServerRequest, response: Http2ServerResponse): void {
-        const {apiPath, method, body, parameters} = requestData;
+        console.log('[RequestHandler:onRequest]');
+        const {api, method, body, parameters} = requestData;
 
-        if (apiPath === APIS.SIGN_IN) {
+        if (api === APIS.SIGN_IN) {
             if (method === HTTP_METHODS.POST) {
                 
             }

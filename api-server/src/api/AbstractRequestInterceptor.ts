@@ -11,8 +11,10 @@ abstract class AbstractRequestInterceptor {
         }
     }
 
-    public setNextInterceptor(interceptor: AbstractRequestInterceptor) {
+    public setNextInterceptor(interceptor: AbstractRequestInterceptor): AbstractRequestInterceptor {
         this.nextInterceptor = interceptor;
+
+        return this.nextInterceptor;
     }
 
     // TODO: think whether it is better to create a general request
@@ -30,7 +32,6 @@ abstract class AbstractRequestInterceptor {
     protected next(...args: any[]): any {
         const result = this.nextInterceptor?.onRequest(...args);
 
-        console.log({result});
         return result;
     }
 }

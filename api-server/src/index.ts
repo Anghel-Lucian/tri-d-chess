@@ -3,8 +3,9 @@ import fs from 'node:fs';
 
 import 'dotenv/config';
 
-import RequestHandler from '@api/RequestHandler.js';
 import RequestParser from '@api/RequestParser.js';
+import RequestValidator from '@api/RequestValidator.js';
+import RequestHandler from '@api/RequestHandler.js';
 
 import DBConnection from '@model/DBConnection.js';
 
@@ -14,18 +15,22 @@ const server = createSecureServer({
 });
 
 const requestParser = new RequestParser();
+const requestValidator = new RequestValidator();
 const requestHandler = new RequestHandler();
 
-requestParser.setNextInterceptor(requestHandler);
+requestParser
+    .setNextInterceptor(requestValidator)
+    .setNextInterceptor(requestHandler);
 
 server.on('error', (error: Error) => {
     RequestHandler.onError(error);
 });
 
-server.on('request', (request, response) => {
+server.on('request', async (request, response) => {
     console.log('Processing request');
-    const dbInstance = DBConnection.getInstance();
-    dbInstance.createNewUser("Lucian", "lucian@email.com", "verysecurepassword");
+    //const dbInstance = DBConnection.getInstance();
+    //const user = await dbInstance.createNewUser("Lucian", "lucian@email.com", "verysecurepassword");
+    //console.log({user});
     requestParser.onRequest(request, response);
 });
 
