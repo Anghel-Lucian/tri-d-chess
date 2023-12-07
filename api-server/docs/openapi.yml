@@ -63,13 +63,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserLogIn'
           application/xml:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserLogIn'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/UserLogIn'
         required: true
       responses:
         '200':
@@ -101,8 +101,12 @@ paths:
           name: userId
           schema:
             type: string
-          required: true
           description: String ID of the user
+        - in: query
+          name: username
+          schema:
+            type: string
+          description: Username of the user
       responses:
         '200':
           description: Statistics for user
@@ -113,8 +117,12 @@ paths:
             application/xml:
               schema:
                 $ref: '#/components/schemas/Stats'
+        '400':
+          description: Invalid request, specify either userId or username query parameters
         '403':
           description: Black-listed or unwanted client
+        '404':
+          description: Statistics for given user not found
         '500':
           description: Internal server error
   /guest:
@@ -161,8 +169,6 @@ components:
       type: object
       required:
         - username
-        - firstName
-        - lastName
         - email
         - password
       properties:
@@ -172,12 +178,6 @@ components:
         username:
           type: string
           example: theUser
-        firstName:
-          type: string
-          example: John
-        lastName:
-          type: string
-          example: James
         email:
           type: string
           example: john@email.com
@@ -186,6 +186,23 @@ components:
           example: '12345'
       xml:
         name: user
+    UserLogIn:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          example: john@email.com
+        password:
+          type: string
+          example: '12345'
+      xml:
+        name: userLogIn
     Guest:
       type: object
       required:
@@ -244,4 +261,4 @@ components:
           type: boolean
       xml:
         name: game
-   
+  

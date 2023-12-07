@@ -1,6 +1,8 @@
 import pg from 'pg';
-import 'dotenv/config';
+
 import User from '@model/User.js';
+import Guest from '@model/Guest.js';
+import Stats from '@model/Stats.js';
 
 const TABLES = {
     USERS: "users",
@@ -96,9 +98,100 @@ export default class DBConnection {
             // Rollback transaction in case of error
             await client.query('ROLLBACK');
             this.onClientError(err);
+            return null;
         } finally {
             client.release();
         }
+    }
+
+    public async createGuest(username: string): Promise<Guest> {
+        const client = await this.pool.connect();
+
+        try {
+            const queryOptions = {
+                values: [username],
+                text: `INSERT INTO ${TABLES.GUEST} (username) VALUES ($1) RETURNING uid, username`
+            };
+
+            const result = await client.query({
+                ...queryOptions,
+                rowMode: 'array'
+            });
+
+            if (result.fields?.length === 0 || result.rows?.length === 0) {
+                return null;
+            }
+
+            const data = this.parseDBResult(result);
+
+            return new Guest(data.username, data.uid);
+        } catch (err) {
+            this.onClientError(err);
+            return null;
+        } finally {
+            client.release();
+        }
+    }
+
+    public async getEntityByProperties(table: string, properties: {
+        email?: string, 
+        username?: string, 
+        password?: string, 
+        uid?: string,
+        userId?: string
+    }): Promise<User | Stats> {
+        const client = await this.pool.connect();
+
+        try {
+            const queryStringWhereClauseArguments = this.getQueryStringWhereClauseArgumentsBasedOnProperties(properties);
+           
+            const queryOptions = {
+                values: Object.values(properties),
+                text: `SELECT * FROM ${table} WHERE (${queryStringWhereClauseArguments})`
+            }
+
+            const result = await client.query({
+                ...queryOptions,
+                rowMode: 'array'
+            });
+
+            if (result.fields?.length === 0 || result.rows?.length === 0) {
+                return null;
+            }
+
+            const data = this.parseDBResult(result);
+
+            if (table === TABLES.USERS) {
+                return new User(data.username, data.email, data.password, data.statsid, data.uid);
+            } else if (table === TABLES.STATS) {
+                return new Stats(data.wins, data.losses, data.winrate, data.userid, data.uid);
+            }
+        } catch (err) {
+            this.onClientError(err);
+            return null;
+        } finally {
+            client.release();
+        }
+    }
+
+    public async getUserByEmailAndPassword(email: string, password: string): Promise<User> {
+        return await this.getEntityByProperties(TABLES.USERS, {email, password}) as User;
+    }
+
+    public async getUserByUsername(username: string): Promise<User> {
+        return await this.getEntityByProperties(TABLES.USERS, {username}) as User;
+    }
+
+    public async getUserByEmail(email: string): Promise<User> {
+        return await this.getEntityByProperties(TABLES.USERS, {email}) as User;
+    }
+
+    public async getStatsByUsername(username: string): Promise<Stats> {
+        return await this.getEntityByProperties(TABLES.STATS, {username}) as Stats;
+    }
+
+    public async getStatsByUserId(userId: string): Promise<Stats> {
+        return await this.getEntityByProperties(TABLES.STATS, {userId}) as Stats;
     }
 
     private parseDBResult(result: pg.QueryArrayResult<any[]>) {
@@ -125,6 +218,15 @@ export default class DBConnection {
         }
 
         return parsedResult;
+    }
+
+    private getQueryStringWhereClauseArgumentsBasedOnProperties(properties: {[key: string]: string}): string {
+        return Object
+            .keys(properties)
+            .map((key, index, arr) => index !== arr.length - 1 
+                ? `${key} = $${index + 1}` 
+                : `${key} = $${index + 1}`)
+            .join(' AND ')
     }
 
     private onPoolError(err: Error, client: pg.PoolClient): void {

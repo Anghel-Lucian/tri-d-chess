@@ -25,7 +25,11 @@ export default class User extends AbstractEntity {
     }
 
     public getFields(): { [key: string]: any; } {
-        return {};
+        return {
+            username: this.getUsername(),
+            email: this.getEmail(),
+            password: this.getPassword()
+        };
     }
 
     public getUsername(): string {

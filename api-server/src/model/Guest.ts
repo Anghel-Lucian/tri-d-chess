@@ -19,6 +19,10 @@ export default class Guest extends AbstractEntity {
     }
 
     public getFields(): { [key: string]: any; } {
-        return {};
+        return {username: this.getUsername()};
+    }
+    
+    public getUsername(): string {
+        return this.username;
     }
 }

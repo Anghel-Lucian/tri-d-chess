@@ -17,9 +17,7 @@ export interface ParsedRequestData {
 export interface ParsedRequestUserData extends ParsedRequestData {
     body: {
         id?: string,
-        username: string,
-        firstName: string,
-        lastName: string,
+        username?: string,
         email: string,
         password: string
     }
@@ -34,6 +32,7 @@ export interface ParsedRequestGuestData extends ParsedRequestData {
 
 export interface ParsedRequestStatsData extends ParsedRequestData {
     parameters: {
-        userId: string
+        userId?: string,
+        username?: string
     }
 }

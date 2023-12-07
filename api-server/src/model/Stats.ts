@@ -7,7 +7,7 @@ export default class Stats extends AbstractEntity {
     private losses: number;
     private userId: string;
 
-    constructor(wins: number, losses: number, winRate?: number, id?: string, userId?: string) {
+    constructor(wins: number, losses: number, winRate?: number, userId?: string, id?: string) {
         super();
 
         this.wins = wins;
@@ -32,7 +32,12 @@ export default class Stats extends AbstractEntity {
 
        
     public getFields(): { [key: string]: any; } {
-        return {};
+        return {
+            wins: this.getWins(),
+            losses: this.getLosses(),
+            winRate: this.getWinRate(),
+            userId: this.getUserId()
+        };
     } 
 
     public getWinRate(): number {

@@ -33,3 +33,16 @@ export const HTTP_CODES_DESCRIPTIONS = {
     [HTTP_CODES.RESOURCE_ALREADY_EXISTS]: 'Resource already exists',
     [HTTP_CODES.INTERNAL_ERROR]: 'Interval server error'
 }
+
+export const COMMON_RESPONSE_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=86400; includeSubDomains",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS, HEAD",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Embedder-Policy": "require-corp",
+    "Cross-Origin-Resource-Policy": "same-site",
+    "Permissions-Policy": "geolocation=(), camera=(), microphone=()",
+    "Server": "webserver",
+    "Content-Type": "application/json; charset=utf-8"
+}

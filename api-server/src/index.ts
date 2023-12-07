@@ -23,7 +23,7 @@ requestParser
     .setNextInterceptor(requestHandler);
 
 server.on('error', (error: Error) => {
-    RequestHandler.onError(error);
+    console.error(error);
 });
 
 server.on('request', async (request, response) => {
