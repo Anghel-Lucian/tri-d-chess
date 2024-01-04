@@ -63,6 +63,8 @@ export default class GameView {
             
             objLoader.setMaterials(materials);
             objLoader.load("assets/chess-pieces/Bishop.obj", (object) => {
+                object.scale.setScalar(0.03);
+                object.rotateX(3.14 * 1.5);
                 scene.add(object);
             });
         });

@@ -1,7 +1,9 @@
 import { Http2ServerRequest, Http2ServerResponse } from "http2";
+
 import { ParsedRequestData, HTTP_METHODS } from "@api/types/index.js";
-import { APIS, API_ROUTES, API_ROUTES_REGEXES } from "@api/constants/index.js";
+import { APIS, API_ROUTES, API_ROUTES_REGEXES, HTTP_CODES } from "@api/constants/index.js";
 import AbstractRequestInterceptor from "@api/AbstractRequestInterceptor.js";
+import { LOG_LEVEL } from "../constants.js";
 
 /**
   * Class that parses request object to obtain data 
@@ -26,14 +28,24 @@ export default class RequestParser extends AbstractRequestInterceptor {
             method = HTTP_METHODS.POST;
         }
 
-        if (path === API_ROUTES.SIGN_IN && method === HTTP_METHODS.POST) {
-            this.onSignIn(request, response, path, method);
-        } else if (path === API_ROUTES.LOG_IN && method === HTTP_METHODS.POST) {
-            this.onLogIn(request, response, path, method);
-        } else if (path === API_ROUTES.GUEST) {
-            this.onGuest(request, response, path, method);
-        } else if (API_ROUTES_REGEXES.STATS.test(path) && method === HTTP_METHODS.GET) {
-            this.onStats(request, response, path, method);
+        try {
+            if (path === API_ROUTES.SIGN_IN && method === HTTP_METHODS.POST) {
+                this.onSignIn(request, response, path, method);
+            } else if (path === API_ROUTES.LOG_IN && method === HTTP_METHODS.POST) {
+                this.onLogIn(request, response, path, method);
+            } else if (path === API_ROUTES.GUEST) {
+                this.onGuest(request, response, path, method);
+            } else if (API_ROUTES_REGEXES.STATS.test(path) && method === HTTP_METHODS.GET) {
+                this.onStats(request, response, path, method);
+            }
+        } catch (err) {
+            this.onError(
+                err,
+                response,
+                HTTP_CODES.INTERNAL_ERROR,
+                'Internal error',
+                LOG_LEVEL.ERROR
+            );
         }
     }
 
@@ -45,6 +57,18 @@ export default class RequestParser extends AbstractRequestInterceptor {
             .on('data', (chunk: Buffer) => chunks.push(chunk))
             .on('end', () => {
                 fullResponseBuffer = Buffer.concat(chunks);
+
+                if (!fullResponseBuffer || !fullResponseBuffer.length) {
+                    this.onError(
+                        new Error('[RequestParser:onSignIn:${APIS.SIGN_IN}]: Request body missing'),
+                        response,
+                        HTTP_CODES.BAD_REQUEST,
+                        'You have to provide a request body',
+                        LOG_LEVEL.WARN
+                    );
+                    return;
+                }
+
                 const parsedRequestData: ParsedRequestData = {
                     path,
                     api: APIS.SIGN_IN, 
@@ -64,6 +88,18 @@ export default class RequestParser extends AbstractRequestInterceptor {
             .on('data', (chunk: Buffer) => chunks.push(chunk))
             .on('end', () => {
                 fullResponseBuffer = Buffer.concat(chunks);
+
+                if (!fullResponseBuffer || !fullResponseBuffer.length) {
+                    this.onError(
+                        new Error('[RequestParser:onSignIn:${APIS.SIGN_IN}]: Request body missing'),
+                        response,
+                        HTTP_CODES.BAD_REQUEST,
+                        'You have to provide a request body',
+                        LOG_LEVEL.WARN
+                    );
+                    return;
+                }
+
                 const parsedRequestData: ParsedRequestData = {
                     path,
                     api: APIS.LOG_IN,
@@ -83,6 +119,18 @@ export default class RequestParser extends AbstractRequestInterceptor {
             .on('data', (chunk: Buffer) => chunks.push(chunk))
             .on('end', () => {
                 fullResponseBuffer = Buffer.concat(chunks);
+
+                if (!fullResponseBuffer || !fullResponseBuffer.length) {
+                    this.onError(
+                        new Error('[RequestParser:onSignIn:${APIS.SIGN_IN}]: Request body missing'),
+                        response,
+                        HTTP_CODES.BAD_REQUEST,
+                        'You have to provide a request body',
+                        LOG_LEVEL.WARN
+                    );
+                    return;
+                }
+
                 const parsedRequestData: ParsedRequestData = {
                     path,
                     api: APIS.GUEST,
@@ -102,7 +150,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
                 const parsedParameters: {[key: string]: string} = {};
 
                 for (const parameter of stringParameters) {
-                    const [name, _, value] = parameter.split('=');
+                    const [name, value] = parameter.split('=');
 
                     parsedParameters[name] = value;
                 }

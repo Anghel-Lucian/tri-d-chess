@@ -23,6 +23,27 @@ export default class Game extends AbstractEntity {
     }
 
     public getFields(): { [key: string]: any; } {
-       return {}; 
-    }    
+       return {
+            id: this.getId(),
+            winner: this.getWinner(),
+            loser: this.getLoser(),
+            forfeited: this.getForfeited()
+       }; 
+    }
+
+    public getId(): string {
+        return this.id;
+    }
+
+    public getWinner(): string {
+        return this.winner;
+    }
+
+    public getLoser(): string {
+        return this.loser;
+    }
+
+    public getForfeited(): boolean {
+        return this.forfeited;
+    }
 }

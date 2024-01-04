@@ -1,6 +1,14 @@
+import { Http2ServerResponse } from "node:http2";
+
+import { LOG_LEVEL } from "../constants.js";
+import { HTTP_CODES, COMMON_RESPONSE_HEADERS } from "@api/constants/index.js";
+import ResponseBody from "@api/ResponseBody.js";
+
 /**
   * Used for chaining different kinds of interceptor to one single request.
   * E.g.: request to server goes through security filter, then parser, then handler.
+  *
+  * Similar to a Linked List node
   */
 abstract class AbstractRequestInterceptor {
     protected nextInterceptor: AbstractRequestInterceptor;
@@ -33,6 +41,30 @@ abstract class AbstractRequestInterceptor {
         const result = this.nextInterceptor?.onRequest(...args);
 
         return result;
+    }
+
+    protected onError(
+        err: Error, 
+        response: Http2ServerResponse,
+        statusCode?: number,
+        message?: string,
+        logLevel?: LOG_LEVEL
+    ): void {
+        switch (logLevel) {
+            case LOG_LEVEL.ERROR:
+                console.error(err);
+                break;
+            case LOG_LEVEL.WARN:
+                console.warn(err);
+                break;
+            case LOG_LEVEL.INFO:
+                console.log(err);
+                break;
+            default:
+                console.error(err);
+        }
+        response.writeHead(statusCode || HTTP_CODES.INTERNAL_ERROR, COMMON_RESPONSE_HEADERS);
+        response.end(new ResponseBody(message || 'Internal server error').toJSON());
     }
 }
 

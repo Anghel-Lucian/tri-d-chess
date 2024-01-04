@@ -10,6 +10,8 @@ tags:
     description: Supports general operations of signing in, logging in, getting a user's stats
   - name: Guest APIs
     description: Supports operations for guest users
+  - name: Game APIs
+    description: APIs related to games
 paths:
   /sign-in:
     post:
@@ -37,10 +39,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'          
+                $ref: '#/components/schemas/UserResponse'          
             application/xml:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
         '400':
           description: Invalid credentials
         '403':
@@ -77,10 +79,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'          
+                $ref: '#/components/schemas/UserResponse'          
             application/xml:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
         '400':
           description: Invalid credentials
         '403':
@@ -113,10 +115,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Stats'          
+                $ref: '#/components/schemas/StatsResponse'          
             application/xml:
               schema:
-                $ref: '#/components/schemas/Stats'
+                $ref: '#/components/schemas/StatsResponse'
         '400':
           description: Invalid request, specify either userId or username query parameters
         '403':
@@ -151,16 +153,50 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Guest'          
+                $ref: '#/components/schemas/GuestResponse'          
             application/xml:
               schema:
-                $ref: '#/components/schemas/Guest'
+                $ref: '#/components/schemas/GuestResponse'
         '400':
           description: Invalid credentials
         '403':
           description: Black-listed or unwanted client
         '404':
           description: Guest not found in DB
+        '500':
+          description: Internal server error
+  /games:
+    post:
+      tags:
+        - Game APIs
+      summary: Create a new game entry in the system
+      description: Provide details for the game and store it, games should be registered once it ends
+      operationId: gameInsert
+      requestBody:
+        description: Data for the game
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Game'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Game'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Game'
+        required: true
+      responses:
+        '200':
+          description: Game insert successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameResponse'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/GameResponse'
+        '403':
+          description: Black-listed or unwanted client
         '500':
           description: Internal server error
 components:
@@ -186,6 +222,18 @@ components:
           example: '12345'
       xml:
         name: user
+    UserResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/User'
+      xml:
+        name: userResponse
     UserLogIn:
       type: object
       required:
@@ -216,6 +264,18 @@ components:
           example: theUser
       xml:
         name: guest
+    GuestResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Guest'
+      xml:
+        name: guestResponse
     Stats:
       type: object
       required:
@@ -238,27 +298,54 @@ components:
         losses:
           type: integer
           format: int32
-        user:
-          $ref: '#/components/schemas/User'
+        userId:
+          type: string
+          format: uuid
+        username:
+          type: string
       xml: 
         name: stats
+    StatsResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Stats'
+      xml:
+        name: statsResponse
     Game:
       type: object
       required:
         - id
-        - winner
-        - loser
+        - winnerId
+        - loserId
         - forfeited
       properties:
         id:
           type: string
           format: uuid
-        winner:
-          $ref: '#/components/schemas/User'
-        loser:
-          $ref: '#/components/schemas/User'
+        winnerId:
+          type: string
+        loserId:
+          type: string
         forfeited:
           type: boolean
       xml:
         name: game
+    GameResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Game'
+      xml:
+        name: gameResponse
   

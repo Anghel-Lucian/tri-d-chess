@@ -3,6 +3,7 @@ import { Http2ServerRequest, Http2ServerResponse } from "node:http2";
 import {ParsedRequestData, HTTP_METHODS} from "@api/types/index.js";
 import {APIS, COMMON_RESPONSE_HEADERS, HTTP_CODES} from "@api/constants/index.js";
 import AbstractRequestInterceptor from "@api/AbstractRequestInterceptor.js";
+import ResponseBody from "@api/ResponseBody.js";
 import Model from "@model/index.js";
 import User from "@model/User.js";
 import Guest from "@model/Guest.js";
@@ -14,6 +15,8 @@ import { LOG_LEVEL } from "../constants.js";
 // for instance, the statistics should also return the games and the user
 // TODO: do the implementation for games requests
 // TODO: implement deletion of Guest accounts after some point
+// TODO: you can't get statistics by uesrname and userid because the properties don't exist in that
+// table, you need to make a join
 export default class RequestHandler extends AbstractRequestInterceptor {
     private model: Model;
 
@@ -26,8 +29,9 @@ export default class RequestHandler extends AbstractRequestInterceptor {
     // TODO: create a Logger class that will take care of all logging without cross-cutting concerns,
     // e.g., runs only on thrown errors or warnings or some special event
     public async onRequest(requestData: ParsedRequestData, request: Http2ServerRequest, response: Http2ServerResponse): Promise<void> {
+        console.log('[RequestHandler:onRequest]');
         const {api, method, body, parameters} = requestData;
-        let json: string;
+        const responseBody = new ResponseBody('API not found. Check OpenAPI spec.');
 
         try {
             if (api === APIS.SIGN_IN) {
@@ -71,7 +75,8 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                         return;
                     }
 
-                    json = user.toJSON(); 
+                    responseBody.setData(user); 
+                    responseBody.setMessage('Success. Created new user');
                 }
             } else if (api === APIS.LOG_IN) {
                 if (method === HTTP_METHODS.POST) {
@@ -89,7 +94,8 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                         return;
                     }
 
-                    json = user.toJSON();
+                    responseBody.setData(user);
+                    responseBody.setMessage('Success. User authenticated');
                 }
             } else if (api === APIS.GUEST) {
                 if (method === HTTP_METHODS.POST) {
@@ -106,7 +112,8 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                         return;
                     }
 
-                    json = guest.toJSON();
+                    responseBody.setData(guest);
+                    responseBody.setMessage('Success. Guest account created');
                }
             } else if (api === APIS.STATS) {
                 if (method === HTTP_METHODS.GET) {
@@ -130,50 +137,21 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                         return;
                     }
 
-                    json = stats.toJSON();
+                    responseBody.setData(stats);
+                    responseBody.setMessage('Success. Statistics found');
                 }
-            }
-                
-            if (!json) {
-                this.onError(
-                    new Error(`[RequestHandler:onRequest:${api}]: JSON not generated`),
-                    response,
-                    HTTP_CODES.INTERNAL_ERROR,
-                    'Could not generate response'
-                );
+            } else {
+                response.writeHead(HTTP_CODES.NOT_FOUND, COMMON_RESPONSE_HEADERS);
+                response.end(responseBody.toJSON());
                 return;
             }
 
             response.writeHead(HTTP_CODES.SUCCESS, COMMON_RESPONSE_HEADERS);
-            response.end(json);
+            response.end(responseBody.toJSON());
         } catch (err) {
             this.onError(err, response);
         }
 
         return;
-    }
-
-    private onError(
-        err: Error, 
-        response: Http2ServerResponse,
-        statusCode?: number,
-        message?: string,
-        logLevel?: LOG_LEVEL
-    ): void {
-        switch (logLevel) {
-            case LOG_LEVEL.ERROR:
-                console.error(err);
-                break;
-            case LOG_LEVEL.WARN:
-                console.warn(err);
-                break;
-            case LOG_LEVEL.INFO:
-                console.log(err);
-                break;
-            default:
-                console.error(err);
-        }
-        response.writeHead(statusCode || HTTP_CODES.INTERNAL_ERROR, COMMON_RESPONSE_HEADERS);
-        response.end(message || 'Interval server error');
     }
 }

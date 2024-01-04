@@ -3,6 +3,7 @@ import pg from 'pg';
 import User from '@model/User.js';
 import Guest from '@model/Guest.js';
 import Stats from '@model/Stats.js';
+import Game from '@model/Game.js';
 
 const TABLES = {
     USERS: "users",
@@ -20,13 +21,14 @@ const dbClientConfig: pg.ClientConfig = {
     port: Number(process.env.DB_PORT)
 };
 
+
 /**
   * The pg package does not keep track of the type in Postgres.
   * When a number column is queried, the result might be a string.
   * To avoid this, this table keeps track of the column names and
   * their types.
   */
-const dbColumnsTypesTable: {[key: string]: string} = {
+const DB_COLUMN_TYPES: {[key: string]: string} = {
     wins: 'number',
     losses: 'number',
     winrate: 'number',
@@ -34,7 +36,8 @@ const dbColumnsTypesTable: {[key: string]: string} = {
     email: 'string',
     statsid: 'string',
     password: 'string',
-    uid: 'string'
+    uid: 'string',
+    forfeited: 'boolean'
 };
 
 export default class DBConnection {
@@ -110,7 +113,7 @@ export default class DBConnection {
         try {
             const queryOptions = {
                 values: [username],
-                text: `INSERT INTO ${TABLES.GUEST} (username) VALUES ($1) RETURNING uid, username`
+                text: `INSERT INTO ${TABLES.GUEST} (username) VALUES ($1) RETURNING username`
             };
 
             const result = await client.query({
@@ -185,18 +188,76 @@ export default class DBConnection {
     public async getUserByEmail(email: string): Promise<User> {
         return await this.getEntityByProperties(TABLES.USERS, {email}) as User;
     }
+   
+    public async getStatsByUsernameOrUserId(userIdentifiers: {username?: string, userId?: string}): Promise<Stats> {
+        const client = await this.pool.connect();
+
+        try {
+            if (!userIdentifiers.username && !userIdentifiers.userId) {
+                throw new Error('[DBConnection:getStatsByUsernameOrUserId]: username or id for user identification missing');
+            }
+
+            const userIdentificationColumn = userIdentifiers.userId ? 'uid' : 'username';
+            const userIdentificationValue = userIdentifiers.userId || userIdentifiers.username;
+
+            const statsQueryOptions = {
+                values: [userIdentificationValue],
+                text: `
+                    SELECT s.uid, s.wins, s.losses, s.winrate, u.uid AS userId, u.username 
+                    FROM "${TABLES.STATS}" s 
+                    JOIN "${TABLES.USERS}" u ON s.uid = u.statsid 
+                    WHERE u.${userIdentificationColumn} = $1
+                `
+            }
+
+            const statsResult = await client.query({
+                ...statsQueryOptions,
+                rowMode: 'array'
+            });
+
+            if (statsResult.fields?.length === 0 || statsResult.rows?.length === 0) {
+                return null;
+            }
+
+            const statsData = this.parseDBResult(statsResult);
+
+            const gamesQueryOptions = {
+                values: [statsData.userid],
+                text: `SELECT * FROM ${TABLES.GAME} WHERE (winner = $1 OR loser = $1)`
+            };
+
+            const gamesResult = await client.query({
+                ...gamesQueryOptions,
+                rowMode: 'array'
+            });
+
+            const games = this.parseDBResultMulti(gamesResult);
+            const parsedGames: Game[] = [];
+
+            for (const game of games) {
+                parsedGames.push(new Game(game.winner, game.loser, game.forfeited, game.uid));
+            }
+
+            return new Stats(statsData.wins, statsData.losses, parsedGames, statsData.winrate, statsData.uid, statsData.userid, statsData.username);
+        } catch (err) {
+            this.onClientError(err);
+            return null;
+        } finally {
+            client.release();
+        }
+    }
 
     public async getStatsByUsername(username: string): Promise<Stats> {
-        return await this.getEntityByProperties(TABLES.STATS, {username}) as Stats;
+        return await this.getStatsByUsernameOrUserId({username});
     }
 
     public async getStatsByUserId(userId: string): Promise<Stats> {
-        return await this.getEntityByProperties(TABLES.STATS, {userId}) as Stats;
+        return await this.getStatsByUsernameOrUserId({userId});
     }
 
-    private parseDBResult(result: pg.QueryArrayResult<any[]>) {
+    private parseDBResult(result: pg.QueryArrayResult<any[]>): any {
         if (result.fields?.length === 0 || result.rows?.length === 0) {
-            throw new Error("[DBConnection:parseDBResult]: parsing didn't function. Result is empty or doesn't have fields or rows.");
+            throw new Error("[DBConnection:parseDBResult]: parsing failed. Result is empty or doesn't have fields or rows.");
         }
 
         const parsedResult: any = {};
@@ -205,19 +266,57 @@ export default class DBConnection {
             const columnName = result.fields[i].name;
             const value = result.rows[0][i];
 
-            switch (dbColumnsTypesTable[columnName]) {
-                case 'number':
-                    parsedResult[columnName] = Number(value);
-                    break;
-                case 'string':
-                    parsedResult[columnName] = String(value);
-                    break;
-                default:
-                    parsedResult[columnName] = value;
-            }
+            parsedResult[columnName] = this.getCorrectlyTypedColumnValue(value, columnName);
         }
 
         return parsedResult;
+    }
+
+    private parseDBResultMulti(result: pg.QueryArrayResult<any[]>): any[] {
+        if (result.fields?.length === 0) {
+            throw new Error("[DBConnection:parseDBResultMulti]: parsing failed. Result is empty or doesn't have fields or rows.");
+        }
+
+        if (result.rows?.length === 0) {
+            return [];
+        }
+
+        const parsedResult: any[] = [];
+
+        for (let i = 0; i < result.rows.length; i++) {
+            const item: any = {};
+
+            for (let j = 0; j < result.fields.length; j++) {
+                const columnName = result.fields[j].name;
+                const value = result.rows[i][j];
+
+                item[columnName] = this.getCorrectlyTypedColumnValue(value, columnName);
+            }
+
+            parsedResult.push(item);
+        }
+
+        return parsedResult;
+    }
+
+    private getCorrectlyTypedColumnValue(value: string, columnName: string): any {
+        let castedValue;
+        
+        switch (DB_COLUMN_TYPES[columnName]) {
+            case 'number':
+                castedValue = Number(value);
+            break;
+            case 'string':
+                castedValue = String(value);
+            break;
+            case 'boolean':
+                castedValue = Boolean(value);
+            break;
+            default:
+                castedValue = value;
+        }
+
+        return castedValue;
     }
 
     private getQueryStringWhereClauseArgumentsBasedOnProperties(properties: {[key: string]: string}): string {
