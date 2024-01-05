@@ -136,6 +136,37 @@ export default class DBConnection {
         }
     }
 
+    public async createFinishedGame(winnerId: string, loserId: string, forfeited: boolean): Promise<Game> {
+        const client = await this.pool.connect();
+
+        try {
+            const queryOptions = {
+                values: [winnerId, loserId, forfeited],
+                text: `
+                    INSERT INTO ${TABLES.GAME} (winner, loser, forfeited) 
+                    VALUES ($1, $2, $3) RETURNING uid, winner, loser, forfeited`
+            };
+
+            const result = await client.query({
+                ...queryOptions,
+                rowMode: 'array'
+            });
+
+            if (result.fields?.length === 0 || result.rows?.length === 0) {
+                return null;
+            }
+
+            const data = this.parseDBResult(result);
+
+            return new Game(data.winner, data.loser, data.forfeited, data.uid);
+        } catch (err) {
+            this.onClientError(err);
+            return null;
+        } finally {
+            client.release();
+        }
+    }
+
     public async getEntityByProperties(table: string, properties: {
         email?: string, 
         username?: string, 
@@ -187,6 +218,10 @@ export default class DBConnection {
 
     public async getUserByEmail(email: string): Promise<User> {
         return await this.getEntityByProperties(TABLES.USERS, {email}) as User;
+    }
+
+    public async getUserById(id: string): Promise<User> {
+        return await this.getEntityByProperties(TABLES.USERS, {uid: id}) as User;
     }
    
     public async getStatsByUsernameOrUserId(userIdentifiers: {username?: string, userId?: string}): Promise<Stats> {

@@ -8,6 +8,7 @@ import Model from "@model/index.js";
 import User from "@model/User.js";
 import Guest from "@model/Guest.js";
 import Stats from "@model/Stats.js";
+import Game from "@model/Game.js";
 import { LOG_LEVEL } from "../constants.js";
 
 // TODO: handle DELETE cases and add the requests to the openAPI spec
@@ -15,8 +16,6 @@ import { LOG_LEVEL } from "../constants.js";
 // for instance, the statistics should also return the games and the user
 // TODO: do the implementation for games requests
 // TODO: implement deletion of Guest accounts after some point
-// TODO: you can't get statistics by uesrname and userid because the properties don't exist in that
-// table, you need to make a join
 export default class RequestHandler extends AbstractRequestInterceptor {
     private model: Model;
 
@@ -139,6 +138,51 @@ export default class RequestHandler extends AbstractRequestInterceptor {
 
                     responseBody.setData(stats);
                     responseBody.setMessage('Success. Statistics found');
+                }
+            } else if (api === APIS.GAMES) {
+                if (method === HTTP_METHODS.POST) {
+                    const {winnerId, loserId, forfeited} = body;
+
+                    const winnerUser = await this.model.getUserById(winnerId);
+
+                    if (!winnerUser) {
+                        this.onError(
+                            new Error(`[RequestHandler:onRequest:${api}]: user with winnerId not found`),
+                            response,
+                            HTTP_CODES.NOT_FOUND,
+                            'User with given winnerId does not exist',
+                            LOG_LEVEL.WARN
+                        );
+                        return null;
+                    }
+
+                    const loserUser = await this.model.getUserById(loserId);
+
+                    if (!loserUser) {
+                        this.onError(
+                            new Error(`[RequestHandler:onRequest:${api}]: user with loserId not found`),
+                            response,
+                            HTTP_CODES.NOT_FOUND,
+                            'User with given loserId does not exist',
+                            LOG_LEVEL.WARN
+                        );
+                        return null;
+                    }
+
+                    const game: Game = await this.model.createFinishedGame(winnerId, loserId, forfeited);
+
+                    if (!game) {
+                        this.onError(
+                            new Error(`[RequestHandler:onRequest:${api}]: Could not create finished game`),
+                            response,
+                            HTTP_CODES.INTERNAL_ERROR,
+                            'Could not create finished game'
+                        );
+                        return;
+                    }
+
+                    responseBody.setData(game);
+                    responseBody.setMessage('Success. Finished game created');
                 }
             } else {
                 response.writeHead(HTTP_CODES.NOT_FOUND, COMMON_RESPONSE_HEADERS);

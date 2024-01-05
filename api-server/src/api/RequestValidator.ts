@@ -5,6 +5,7 @@ import {
     ParsedRequestGuestData,
     ParsedRequestStatsData,
     ParsedRequestUserData,
+    ParsedRequestGameData,
     HTTP_METHODS
 } from "@api/types/index.js";
 import { APIS, HTTP_CODES } from "@api/constants/index.js";
@@ -52,6 +53,26 @@ export default class RequestValidator extends AbstractRequestInterceptor {
                 );
                 return;
             }
+        } else if (parsedRequestData.api === APIS.GAMES && parsedRequestData.method === HTTP_METHODS.POST) {
+            const gameData = parsedRequestData as ParsedRequestGameData;
+
+            if (!gameData.body?.winnerId 
+                || !gameData.body?.loserId
+                || typeof gameData.body?.forfeited !== 'boolean') {
+                this.onBadRequest(
+                    response, 
+                    parsedRequestData.api, 
+                    'Game request body must contain winnerId: string, loserId:string and forfeited:boolean fields'
+                );
+                return;
+            } else if (gameData.body?.winnerId === gameData.body?.loserId) {
+                this.onBadRequest(
+                    response,
+                    parsedRequestData.api,
+                    'winnerId and loserId need to be distinct'
+                );
+                return;
+            }
         } else if (parsedRequestData.api === APIS.STATS && parsedRequestData.method === HTTP_METHODS.GET) {
             const statsData = parsedRequestData as ParsedRequestStatsData;
 
@@ -63,7 +84,7 @@ export default class RequestValidator extends AbstractRequestInterceptor {
                 );
                 return;
             }
-        }
+        } 
 
         this.next(parsedRequestData, request, response);
     }

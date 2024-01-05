@@ -36,3 +36,12 @@ export interface ParsedRequestStatsData extends ParsedRequestData {
         username?: string
     }
 }
+
+export interface ParsedRequestGameData extends ParsedRequestData {
+    body: {
+        id?: string,
+        winnerId: string,
+        loserId: string,
+        forfeited: boolean
+    }
+}

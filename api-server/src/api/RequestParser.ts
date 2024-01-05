@@ -5,6 +5,8 @@ import { APIS, API_ROUTES, API_ROUTES_REGEXES, HTTP_CODES } from "@api/constants
 import AbstractRequestInterceptor from "@api/AbstractRequestInterceptor.js";
 import { LOG_LEVEL } from "../constants.js";
 
+// TODO: create a generic method instead of all these on* methods, the only thing that
+// varies are the messages, right? don't know if there are other particularities
 /**
   * Class that parses request object to obtain data 
   * such as path, parameters, body, method. The collected data is 
@@ -35,6 +37,8 @@ export default class RequestParser extends AbstractRequestInterceptor {
                 this.onLogIn(request, response, path, method);
             } else if (path === API_ROUTES.GUEST) {
                 this.onGuest(request, response, path, method);
+            } else if (path === API_ROUTES.GAMES && method === HTTP_METHODS.POST) {
+                this.onGames(request, response, path, method);
             } else if (API_ROUTES_REGEXES.STATS.test(path) && method === HTTP_METHODS.GET) {
                 this.onStats(request, response, path, method);
             }
@@ -60,7 +64,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
 
                 if (!fullResponseBuffer || !fullResponseBuffer.length) {
                     this.onError(
-                        new Error('[RequestParser:onSignIn:${APIS.SIGN_IN}]: Request body missing'),
+                        new Error(`[RequestParser:onSignIn:${APIS.SIGN_IN}]: Request body missing`),
                         response,
                         HTTP_CODES.BAD_REQUEST,
                         'You have to provide a request body',
@@ -91,7 +95,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
 
                 if (!fullResponseBuffer || !fullResponseBuffer.length) {
                     this.onError(
-                        new Error('[RequestParser:onSignIn:${APIS.SIGN_IN}]: Request body missing'),
+                        new Error(`[RequestParser:onSignIn:${APIS.LOG_IN}]: Request body missing`),
                         response,
                         HTTP_CODES.BAD_REQUEST,
                         'You have to provide a request body',
@@ -122,7 +126,7 @@ export default class RequestParser extends AbstractRequestInterceptor {
 
                 if (!fullResponseBuffer || !fullResponseBuffer.length) {
                     this.onError(
-                        new Error('[RequestParser:onSignIn:${APIS.SIGN_IN}]: Request body missing'),
+                        new Error(`[RequestParser:onSignIn:${APIS.GUEST}]: Request body missing`),
                         response,
                         HTTP_CODES.BAD_REQUEST,
                         'You have to provide a request body',
@@ -134,6 +138,37 @@ export default class RequestParser extends AbstractRequestInterceptor {
                 const parsedRequestData: ParsedRequestData = {
                     path,
                     api: APIS.GUEST,
+                    method,
+                    body: JSON.parse(fullResponseBuffer.toString())
+                };
+
+                return this.next(parsedRequestData, request, response);
+            });
+    }
+
+    private onGames(request: Http2ServerRequest, response: Http2ServerResponse, path: string, method: HTTP_METHODS) {
+        const chunks: Buffer[] = [];
+        let fullResponseBuffer: Buffer;
+
+        request 
+            .on('data', (chunk: Buffer) => chunks.push(chunk))
+            .on('end', () => {
+                fullResponseBuffer = Buffer.concat(chunks);
+
+                if (!fullResponseBuffer || !fullResponseBuffer.length) {
+                    this.onError(
+                        new Error(`[RequestParser:onGames:${APIS.GAMES}]: Request body missing`),
+                        response,
+                        HTTP_CODES.BAD_REQUEST,
+                        'You have to provide a request body',
+                        LOG_LEVEL.WARN
+                    );
+                    return;
+                }
+
+                const parsedRequestData: ParsedRequestData = {
+                    path,
+                    api: APIS.GAMES,
                     method,
                     body: JSON.parse(fullResponseBuffer.toString())
                 };

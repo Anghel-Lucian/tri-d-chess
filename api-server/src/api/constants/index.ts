@@ -2,14 +2,16 @@ export const APIS = {
     SIGN_IN: "sign-in",
     LOG_IN: "log-in",
     STATS: "stats",
-    GUEST: "guest"
+    GUEST: "guest",
+    GAMES: "games"
 }
 
 export const API_ROUTES = {
     SIGN_IN: "/" + APIS.SIGN_IN,
     LOG_IN: "/" + APIS.LOG_IN,
     STATS: "/" + APIS.STATS,
-    GUEST: "/" + APIS.GUEST
+    GUEST: "/" + APIS.GUEST,
+    GAMES: "/" + APIS.GAMES
 }
 
 export const API_ROUTES_REGEXES = {
