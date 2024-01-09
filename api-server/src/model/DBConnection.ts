@@ -140,26 +140,53 @@ export default class DBConnection {
         const client = await this.pool.connect();
 
         try {
-            const queryOptions = {
+            // Begin transaction
+            await client.query('BEGIN');
+
+            // Inserting game
+            const gameQueryOptions = {
                 values: [winnerId, loserId, forfeited],
                 text: `
                     INSERT INTO ${TABLES.GAME} (winner, loser, forfeited) 
-                    VALUES ($1, $2, $3) RETURNING uid, winner, loser, forfeited`
+                    VALUES ($1, $2, $3) RETURNING uid, winner, loser, forfeited
+                `
             };
 
-            const result = await client.query({
-                ...queryOptions,
+            const resultGame = await client.query({
+                ...gameQueryOptions,
                 rowMode: 'array'
             });
 
-            if (result.fields?.length === 0 || result.rows?.length === 0) {
+            if (resultGame.fields?.length === 0 || resultGame.rows?.length === 0) {
+                await client.query('ROLLBACK');
                 return null;
             }
 
-            const data = this.parseDBResult(result);
+            const gameData = this.parseDBResult(resultGame);
 
-            return new Game(data.winner, data.loser, data.forfeited, data.uid);
+            // Inserting stats_game entries for both users
+            const gameStatsQueryOptions = {
+                values: [gameData.uid, winnerId, loserId],
+                text: `
+                    INSERT INTO ${TABLES.STATS_GAME} (statsid, gameid)
+                    VALUES 
+                        ( (SELECT u.statsid FROM "${TABLES.USERS}" u WHERE uid = $2), $1),
+                        ( (SELECT u.statsid FROM "${TABLES.USERS}" u WHERE uid = $3), $1);
+                `
+            }
+
+            await client.query({
+                ...gameStatsQueryOptions,
+                rowMode: 'array'
+            });
+
+            // Commit transaction
+            await client.query('COMMIT');
+
+            return new Game(gameData.winner, gameData.loser, gameData.forfeited, gameData.uid);
         } catch (err) {
+            // Rollback transaction in case of error
+            await client.query('ROLLBACK');
             this.onClientError(err);
             return null;
         } finally {
@@ -257,8 +284,13 @@ export default class DBConnection {
             const statsData = this.parseDBResult(statsResult);
 
             const gamesQueryOptions = {
-                values: [statsData.userid],
-                text: `SELECT * FROM ${TABLES.GAME} WHERE (winner = $1 OR loser = $1)`
+                values: [statsData.uid],
+                text: `
+                    SELECT g.winner, g.loser, g.forfeited 
+                    FROM "${TABLES.STATS_GAME}" sg
+                    JOIN "${TABLES.GAME}" g ON sg.gameid = g.uid
+                    WHERE sg.statsid = $1
+                ` 
             };
 
             const gamesResult = await client.query({

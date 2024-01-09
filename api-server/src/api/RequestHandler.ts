@@ -12,10 +12,14 @@ import Game from "@model/Game.js";
 import { LOG_LEVEL } from "../constants.js";
 
 // TODO: handle DELETE cases and add the requests to the openAPI spec
-// TODO: handle returning the appropriate JSON structure described in the OpenAPI spec,
-// for instance, the statistics should also return the games and the user
-// TODO: do the implementation for games requests
 // TODO: implement deletion of Guest accounts after some point
+// TODO: generate a CSRF token on log in and on sign in and check if the client sends it after
+// each subsequent request (stats, games, etc.)
+// TODO: blacklisting of IPs that make too many requests
+// TODO: access control with the CORS headers
+// TODO: don't expose id's and passwords in the responses (update OpenAPI spec)
+// TODO: keep track of the devices that the user is logged into at the same time
+// TODO: encryption for passwords and emails
 export default class RequestHandler extends AbstractRequestInterceptor {
     private model: Model;
 
