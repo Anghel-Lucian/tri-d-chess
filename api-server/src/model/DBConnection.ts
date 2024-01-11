@@ -60,7 +60,7 @@ export default class DBConnection {
         return this.instance;
     }
 
-    public async createNewUser(username: string, email: string, password: string): Promise<User> {
+    public async createNewUser(username: string, email: string, passwordHash: string): Promise<User> {
         const client = await this.pool.connect();
 
         try {
@@ -82,8 +82,8 @@ export default class DBConnection {
 
             // Inserting user
             const userQueryOptions = {
-                values: [username, email, password, dataStats.uid],
-                text: `INSERT INTO ${TABLES.USERS} (username, email, password, statsId) VALUES ($1, $2, $3, $4) RETURNING uid, username, email, password, statsId`
+                values: [username, email, passwordHash, dataStats.uid],
+                text: `INSERT INTO ${TABLES.USERS} (username, email, passwordHash, statsId) VALUES ($1, $2, $3, $4) RETURNING username`
             };
 
             const resultUser = await client.query({
@@ -96,7 +96,7 @@ export default class DBConnection {
             // Commit transaction
             await client.query('COMMIT');
 
-            return new User(dataUser.username, dataUser.email, dataUser.password, dataUser.statsid, dataUser.uid);
+            return new User(dataUser.username);
         } catch (err) {
             // Rollback transaction in case of error
             await client.query('ROLLBACK');
@@ -197,13 +197,17 @@ export default class DBConnection {
     public async getEntityByProperties(table: string, properties: {
         email?: string, 
         username?: string, 
-        password?: string, 
+        passwordHash?: string, 
         uid?: string,
         userId?: string
     }): Promise<User | Stats> {
         const client = await this.pool.connect();
 
         try {
+            if (![TABLES.USERS, TABLES.STATS].includes(table)) {
+                throw new Error(`[DBConnection:getEntityByProperties]: ${table} it not a valid table`);
+            }
+
             const queryStringWhereClauseArguments = this.getQueryStringWhereClauseArgumentsBasedOnProperties(properties);
            
             const queryOptions = {
@@ -223,7 +227,7 @@ export default class DBConnection {
             const data = this.parseDBResult(result);
 
             if (table === TABLES.USERS) {
-                return new User(data.username, data.email, data.password, data.statsid, data.uid);
+                return new User(data.username, data.email, data.passwordhash, data.statsid, data.uid);
             } else if (table === TABLES.STATS) {
                 return new Stats(data.wins, data.losses, data.winrate, data.userid, data.uid);
             }
@@ -235,8 +239,8 @@ export default class DBConnection {
         }
     }
 
-    public async getUserByEmailAndPassword(email: string, password: string): Promise<User> {
-        return await this.getEntityByProperties(TABLES.USERS, {email, password}) as User;
+    public async getUserByEmailAndPasswordHash(email: string, passwordHash: string): Promise<User> {
+        return await this.getEntityByProperties(TABLES.USERS, {email, passwordHash}) as User;
     }
 
     public async getUserByUsername(username: string): Promise<User> {

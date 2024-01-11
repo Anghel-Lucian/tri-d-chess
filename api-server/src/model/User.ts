@@ -4,16 +4,25 @@ export default class User extends AbstractEntity {
     private id: string;
     private username: string;
     private email: string;
-    private password: string;
+    private passwordHash: string;
     private statsId: string;
 
-    constructor(username: string, email: string, password: string, statsId?: string, id?: string) {
+    constructor(username: string, email?: string, passwordHash?: string, statsId?: string, id?: string) {
         super();
 
         this.username = username;
-        this.email = email;
-        this.password = password;
-        this.statsId = statsId;
+
+        if (email) {
+            this.email = email;
+        }
+
+        if (passwordHash) {
+            this.passwordHash = passwordHash;
+        }
+
+        if (statsId) {
+            this.statsId = statsId;
+        }
 
         if (id) {
             this.id = id;
@@ -26,9 +35,7 @@ export default class User extends AbstractEntity {
 
     public getFields(): { [key: string]: any; } {
         return {
-            username: this.getUsername(),
-            email: this.getEmail(),
-            password: this.getPassword()
+            username: this.getUsername()
         };
     }
 
@@ -40,8 +47,8 @@ export default class User extends AbstractEntity {
         return this.email;
     }
 
-    public getPassword(): string {
-        return this.password;
+    public getPasswordHash(): string {
+        return this.passwordHash;
     }
 
     public getStatsId(): string {

@@ -14,7 +14,8 @@
         "baseUrl": "src",
         "paths": {
             "@api/*": ["api/*"],
-            "@model/*": ["model/*"]
+            "@model/*": ["model/*"],
+            "@utils/*": ["utils/*"]
         }
     },
     "include": ["src/**/*.ts"]

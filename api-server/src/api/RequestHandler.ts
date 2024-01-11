@@ -9,6 +9,9 @@ import User from "@model/User.js";
 import Guest from "@model/Guest.js";
 import Stats from "@model/Stats.js";
 import Game from "@model/Game.js";
+
+import { hashPassword, verifyPassword } from "@utils/passwordHash.js";
+
 import { LOG_LEVEL } from "../constants.js";
 
 // TODO: handle DELETE cases and add the requests to the openAPI spec
@@ -66,7 +69,10 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                         return null;
                     }
 
-                    const user: User = await this.model.createNewUser(username, email, password);
+
+                    const passwordHash = await hashPassword(password);
+
+                    const user: User = await this.model.createNewUser(username, email, passwordHash);
 
                     if (!user) {
                         this.onError(
@@ -84,7 +90,7 @@ export default class RequestHandler extends AbstractRequestInterceptor {
             } else if (api === APIS.LOG_IN) {
                 if (method === HTTP_METHODS.POST) {
                     const {email, password} = body;
-                    const user: User = await this.model.getUserByEmailAndPassword(email, password);
+                    const user: User = await this.model.getUserByEmail(email);
 
                     if (!user) {
                         this.onError(
@@ -95,6 +101,16 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                             LOG_LEVEL.WARN
                         );
                         return;
+                    }
+
+                    if (!(await verifyPassword(password, user.getPasswordHash()))) {
+                        this.onError(
+                            new Error(`[RequestHandler:onRequest:${api}]: Wrong password`),
+                            response,
+                            HTTP_CODES.NOT_FOUND,
+                            'Invalid credentials',
+                            LOG_LEVEL.WARN
+                        );
                     }
 
                     responseBody.setData(user);
