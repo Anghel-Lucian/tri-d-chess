@@ -320,18 +320,22 @@ components:
     Game:
       type: object
       required:
-        - id
-        - winnerId
-        - loserId
+        - winnerUsername
+        - loserUsername
         - forfeited
       properties:
         id:
           type: string
-          format: uuid
+        winnerUsername:
+          type: string
+        loserUsername:
+          type: string
         winnerId:
           type: string
+          format: uuid
         loserId:
           type: string
+          format: uuid
         forfeited:
           type: boolean
       xml:

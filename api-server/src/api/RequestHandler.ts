@@ -20,9 +20,7 @@ import { LOG_LEVEL } from "../constants.js";
 // each subsequent request (stats, games, etc.)
 // TODO: blacklisting of IPs that make too many requests
 // TODO: access control with the CORS headers
-// TODO: don't expose id's and passwords in the responses (update OpenAPI spec)
 // TODO: keep track of the devices that the user is logged into at the same time
-// TODO: encryption for passwords and emails
 export default class RequestHandler extends AbstractRequestInterceptor {
     private model: Model;
 
@@ -161,13 +159,19 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                 }
             } else if (api === APIS.GAMES) {
                 if (method === HTTP_METHODS.POST) {
-                    const {winnerId, loserId, forfeited} = body;
+                    const {winnerId, loserId, winnerUsername, loserUsername, forfeited} = body;
 
-                    const winnerUser = await this.model.getUserById(winnerId);
+                    let winnerUser;
+
+                    if (winnerId) {
+                        winnerUser = await this.model.getUserById(winnerId);
+                    } else if (winnerUsername) {
+                        winnerUser = await this.model.getUserByUsername(winnerUsername);
+                    }
 
                     if (!winnerUser) {
                         this.onError(
-                            new Error(`[RequestHandler:onRequest:${api}]: user with winnerId not found`),
+                            new Error(`[RequestHandler:onRequest:${api}]: winner not found`),
                             response,
                             HTTP_CODES.NOT_FOUND,
                             'User with given winnerId does not exist',
@@ -176,11 +180,17 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                         return null;
                     }
 
-                    const loserUser = await this.model.getUserById(loserId);
+                    let loserUser; 
+
+                    if (loserId) {
+                        loserUser = await this.model.getUserById(loserId);
+                    } else if (loserUsername) {
+                        loserUser = await this.model.getUserByUsername(loserUsername);
+                    }
 
                     if (!loserUser) {
                         this.onError(
-                            new Error(`[RequestHandler:onRequest:${api}]: user with loserId not found`),
+                            new Error(`[RequestHandler:onRequest:${api}]: loser not found`),
                             response,
                             HTTP_CODES.NOT_FOUND,
                             'User with given loserId does not exist',
@@ -189,7 +199,11 @@ export default class RequestHandler extends AbstractRequestInterceptor {
                         return null;
                     }
 
-                    const game: Game = await this.model.createFinishedGame(winnerId, loserId, forfeited);
+                    const game: Game = await this.model.createFinishedGame(
+                        winnerUser.getId(), 
+                        loserUser.getId(), 
+                        forfeited
+                    );
 
                     if (!game) {
                         this.onError(

@@ -40,8 +40,10 @@ export interface ParsedRequestStatsData extends ParsedRequestData {
 export interface ParsedRequestGameData extends ParsedRequestData {
     body: {
         id?: string,
-        winnerId: string,
-        loserId: string,
+        winnerId?: string,
+        loserId?: string,
+        winnerUsername: string,
+        loserUsername: string,
         forfeited: boolean
     }
 }

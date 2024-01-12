@@ -2,15 +2,15 @@ import { AbstractEntity } from "@model/types/index.js";
 
 export default class Game extends AbstractEntity {
     private id: string;
-    private winner: string;
-    private loser: string;
+    private winnerUsername: string;
+    private loserUsername: string;
     private forfeited: boolean;
 
-    constructor(winner: string, loser: string, forfeited: boolean, id?: string) {
+    constructor(winnerUsername: string, loserUsername: string, forfeited: boolean, id?: string) {
         super();
 
-        this.winner = winner;
-        this.loser = loser;
+        this.winnerUsername = winnerUsername;
+        this.loserUsername = loserUsername;
         this.forfeited = forfeited;
 
         if (id) {
@@ -24,9 +24,8 @@ export default class Game extends AbstractEntity {
 
     public getFields(): { [key: string]: any; } {
        return {
-            id: this.getId(),
-            winner: this.getWinner(),
-            loser: this.getLoser(),
+            winnerUsername: this.getWinnerUsername(),
+            loserUsername: this.getLoserUsername(),
             forfeited: this.getForfeited()
        }; 
     }
@@ -35,12 +34,12 @@ export default class Game extends AbstractEntity {
         return this.id;
     }
 
-    public getWinner(): string {
-        return this.winner;
+    public getWinnerUsername(): string {
+        return this.winnerUsername;
     }
 
-    public getLoser(): string {
-        return this.loser;
+    public getLoserUsername(): string {
+        return this.loserUsername;
     }
 
     public getForfeited(): boolean {

@@ -56,20 +56,20 @@ export default class RequestValidator extends AbstractRequestInterceptor {
         } else if (parsedRequestData.api === APIS.GAMES && parsedRequestData.method === HTTP_METHODS.POST) {
             const gameData = parsedRequestData as ParsedRequestGameData;
 
-            if (!gameData.body?.winnerId 
-                || !gameData.body?.loserId
+            if (!gameData.body?.winnerUsername
+                || !gameData.body?.loserUsername
                 || typeof gameData.body?.forfeited !== 'boolean') {
                 this.onBadRequest(
                     response, 
                     parsedRequestData.api, 
-                    'Game request body must contain winnerId: string, loserId:string and forfeited:boolean fields'
+                    'Game request body must contain winnerUsername:string, loserUsername:string and forfeited:boolean fields'
                 );
                 return;
-            } else if (gameData.body?.winnerId === gameData.body?.loserId) {
+            } else if (gameData.body?.winnerUsername === gameData.body?.loserUsername) {
                 this.onBadRequest(
                     response,
                     parsedRequestData.api,
-                    'winnerId and loserId need to be distinct'
+                    'winnerUsername and loserUsername need to be distinct'
                 );
                 return;
             }

@@ -45,9 +45,7 @@ export default class Stats extends AbstractEntity {
             losses: this.getLosses(),
             winRate: this.getWinRate(),
             games: this.getGames().map(game => game.getFields()),
-            id: this.getId(),
             username: this.getUsername(),
-            userId: this.getUserId()
         };
     } 
 

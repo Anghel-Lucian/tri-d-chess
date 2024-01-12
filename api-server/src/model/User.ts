@@ -54,4 +54,8 @@ export default class User extends AbstractEntity {
     public getStatsId(): string {
         return this.statsId;
     }
+
+    public getId(): string {
+        return this.id;
+    }
 }

@@ -136,7 +136,11 @@ export default class DBConnection {
         }
     }
 
-    public async createFinishedGame(winnerId: string, loserId: string, forfeited: boolean): Promise<Game> {
+    public async createFinishedGame(
+        winnerId: string, 
+        loserId: string,
+        forfeited: boolean
+    ): Promise<Game> {
         const client = await this.pool.connect();
 
         try {
@@ -148,7 +152,11 @@ export default class DBConnection {
                 values: [winnerId, loserId, forfeited],
                 text: `
                     INSERT INTO ${TABLES.GAME} (winner, loser, forfeited) 
-                    VALUES ($1, $2, $3) RETURNING uid, winner, loser, forfeited
+                    VALUES ($1, $2, $3) RETURNING 
+                        uid, 
+                        ( SELECT uw.username FROM ${TABLES.USERS} uw WHERE uw.uid = winner ) AS winnerUsername,
+                        ( SELECT ul.username FROM ${TABLES.USERS} ul WHERE ul.uid = loser ) AS loserUsername, 
+                        forfeited
                 `
             };
 
@@ -180,10 +188,39 @@ export default class DBConnection {
                 rowMode: 'array'
             });
 
+            // Updating the statistics for each player
+            const winnerStatsQueryOptions = {
+                values: [winnerId],
+                text: `
+                    UPDATE ${TABLES.STATS} SET wins = wins + 1 WHERE (
+                        uid = ( SELECT u.statsid FROM ${TABLES.USERS} u WHERE uid = $1 )
+                    )
+                `
+            };
+
+            await client.query({
+                ...winnerStatsQueryOptions,
+                rowMode: 'array'
+            });
+
+            const loserStatsQueryOptions = {
+                values: [loserId],
+                text: `
+                    UPDATE ${TABLES.STATS} SET losses = losses + 1 WHERE (
+                        uid = ( SELECT u.statsid FROM ${TABLES.USERS} u WHERE uid = $1 )
+                    )
+                `
+            };
+
+            await client.query({
+                ...loserStatsQueryOptions,
+                rowMode: 'array'
+            });
+
             // Commit transaction
             await client.query('COMMIT');
 
-            return new Game(gameData.winner, gameData.loser, gameData.forfeited, gameData.uid);
+            return new Game(gameData.winnerusername, gameData.loserusername, gameData.forfeited, gameData.uid);
         } catch (err) {
             // Rollback transaction in case of error
             await client.query('ROLLBACK');
@@ -290,9 +327,11 @@ export default class DBConnection {
             const gamesQueryOptions = {
                 values: [statsData.uid],
                 text: `
-                    SELECT g.winner, g.loser, g.forfeited 
+                    SELECT uw.username AS winnerUsername, ul.username AS loserUsername, g.forfeited 
                     FROM "${TABLES.STATS_GAME}" sg
-                    JOIN "${TABLES.GAME}" g ON sg.gameid = g.uid
+                        JOIN "${TABLES.GAME}" g ON sg.gameid = g.uid
+                        JOIN "${TABLES.USERS}" uw ON g.winner = uw.uid
+                        JOIN "${TABLES.USERS}" ul ON g.loser = ul.uid
                     WHERE sg.statsid = $1
                 ` 
             };
@@ -306,7 +345,7 @@ export default class DBConnection {
             const parsedGames: Game[] = [];
 
             for (const game of games) {
-                parsedGames.push(new Game(game.winner, game.loser, game.forfeited, game.uid));
+                parsedGames.push(new Game(game.winnerusername, game.loserusername, game.forfeited, game.uid));
             }
 
             return new Stats(statsData.wins, statsData.losses, parsedGames, statsData.winrate, statsData.uid, statsData.userid, statsData.username);
