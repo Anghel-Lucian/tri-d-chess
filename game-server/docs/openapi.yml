@@ -1,0 +1,201 @@
+openapi: 3.0.3
+info:
+  title: TriDChess Game API
+  description: APIs for Tri D Chess game related to moves, wins and updating the UI to reflect the game state.
+  version: 1.0.0
+servers:
+  - url: https://tridchess.com/api/v1
+tags:
+  - name: Game registration
+    description: APIs for registering a game, called by Player Queue to signal that two players were matched
+  - name: Game state
+    description: Players making new moves and those moves being represented in the UI via SSEs, also checking win conditions (check mate, player disconnect, forfeit)
+paths:
+  /register-game:
+    get:
+      tags:
+        - Game registration
+      summary: Register a game for two players
+      description: Player Queue service will call this API to signal that two players were matched together. In the backend, Game Server will query the database to check if the game is in the store. If it is, the response will be an ACK, if not, a NAK.
+      operationId: registerGame
+      parameters:
+        - in: query
+          name: gameId
+          schema:
+            type: string
+          description: ID of the created game that should be inside the DB
+      responses:
+        '200':
+          description: ACK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameRegisterACKResponse'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/GameRegisterACKResponse'
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '500':
+          description: Internal server error
+  /move:
+    post:
+      tags:
+        - Game state
+      summary: Moves made by players
+      description: This API will take in moves made by the two players. The UI decides who's the first player, then the Game Server will always check who's turn it is. The move can happen on a Piece or on an Attack Board, meaning both of these can be moved to certain cells. An Attack Board also has its cells in turn, so moving a Piece from one Attack Board cell to another on the same Attack Board is also possible. Moves from an Attack Board to a Full Board are also supported, and vice-versa. Thus, we need all these identifiers of boards, board types, colors, cells and pieces.
+      operationId: move
+      requestBody:
+        description: Move data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Move'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Move'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Move'
+        required: true
+      responses:
+        '200':
+          description: Move registered successfully
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '404':
+          description: User not found in DB
+        '500':
+          description: Internal server error
+  /updates:
+    get:
+      tags:
+        - Game state
+      summary: Game state updates such as moves, checkmate or forfeits
+      description: Note that OpenAPI doesn't currently support SSEs, so this is gonna have to suffice. Server-sent events that will be consumed by the UI. The events will contain data for game state updates, such as moves, win conditions and forfeits. The events will be consumed by the UI such that the game state updates for the idle player. When the active player makes a move, an event will be sent to the idle player and the turn will change and the roles will be reversed (active becomes idle, and idle becomes active).
+      operationId: update
+      parameters:
+        - in: query
+          name: gameId
+          schema:
+            type: string
+          description: ID of the game that is taking place
+      responses:
+        '200':
+          description: A game state update event carrying information consumable by the UI
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameUpdateEvent' 
+components:
+  schemas:
+    GameRegisterACK:
+      type: object
+      required:
+        - acknowledged
+      properties:
+        acknowledged:
+          type: boolean
+    GameRegisterACKResponse:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/GameRegisterACK'
+      xml:
+        name: gameRegisterACKResponse
+    GameUpdateEvent:
+      type: object
+      required:
+        - move
+        - forfeited
+        - win
+        - lose
+      properties:
+        move:
+          $ref: '#/components/schemas/Move'
+        forfeited:
+          type: boolean
+        win:
+          type: boolean
+        lose:
+          type: boolean
+      xml:
+        name: gameUpdateEvent
+    Move:
+      type: object
+      required:
+        - startCell
+        - endCell
+      properties:
+        piece:
+          $ref: '#/components/schemas/Piece'
+        eaten:
+          type: boolean
+        checkmate:
+          type: boolean
+        attackBoard:
+          $ref: '#/components/schemas/AttackBoard'
+        startCell:
+          $ref: '#/components/schemas/Cell'
+        endCell:
+          $ref: '#/components/schemas/Cell'
+      xml:
+        name: move
+    Piece:
+      type: object
+      required:
+        - name
+        - color
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+          enum: [White, Black]
+      xml:
+        name: piece
+    Cell:
+      type: object
+      required:
+        - x
+        - y
+        - boardType
+      properties:
+        x:
+          type: integer
+        y:
+          type: integer
+        boardType:
+          type: string
+          enum: [Top, Middle, Bottom, Left, Right]
+        attackBoardColor:
+          type: string
+          enum: [White, Black]
+      xml:
+        name: Cell
+    AttackBoard:
+      type: object
+      required:
+        - type
+        - color
+        - captured
+      properties:
+        type:
+          type: string
+          enum: [Left, Right]
+        color:
+          type: string
+          enum: [White, Black]
+        captured:
+          type: boolean
+      xml:
+        name: attackBoard

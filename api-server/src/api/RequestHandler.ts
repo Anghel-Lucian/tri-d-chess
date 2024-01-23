@@ -21,6 +21,7 @@ import { LOG_LEVEL } from "../constants.js";
 // TODO: blacklisting of IPs that make too many requests
 // TODO: access control with the CORS headers
 // TODO: keep track of the devices that the user is logged into at the same time
+// TODO: versioning /v1
 export default class RequestHandler extends AbstractRequestInterceptor {
     private model: Model;
 

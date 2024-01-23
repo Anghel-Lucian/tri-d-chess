@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: TriDChess API
+  title: TriDChess General API
   description: APIs for the Tri D Chess account creation and validation, user statistics and game records.
   version: 1.0.0
 servers:
@@ -352,4 +352,4 @@ components:
           $ref: '#/components/schemas/Game'
       xml:
         name: gameResponse
-  
+   
