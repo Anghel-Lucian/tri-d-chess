@@ -52,13 +52,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Move'
+              $ref: '#/components/schemas/MovePayload'
           application/xml:
             schema:
-              $ref: '#/components/schemas/Move'
+              $ref: '#/components/schemas/MovePayload'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Move'
+              $ref: '#/components/schemas/MovePayload'
         required: true
       responses:
         '200':
@@ -84,6 +84,11 @@ paths:
           schema:
             type: string
           description: ID of the game that is taking place
+        - in: query
+          name: playerId
+          schema:
+            type: string
+          description: ID of the player that subscribed to the updates
       responses:
         '200':
           description: A game state update event carrying information consumable by the UI
@@ -150,6 +155,21 @@ components:
           $ref: '#/components/schemas/Cell'
       xml:
         name: move
+    MovePayload:
+      type: object
+      required:
+        - move
+        - gameId
+        - playerId
+      properties:
+        move:
+          $ref: '#/components/schemas/Move'
+        gameId:
+          type: string
+          format: uuid
+        playerId:
+          type: string
+          format: uuid
     Piece:
       type: object
       required:
