@@ -7,7 +7,15 @@ import (
 )
 
 func loadVariable(key string) string {
-    err := godotenv.Load(".env");
+    var fileName string;
+
+    if LocalEnv.DevelopmentRun {
+        fileName = ".env.dev";
+    } else {
+        fileName = ".env";
+    }
+
+    err := godotenv.Load(fileName);
 
     if err != nil {
         panic("[Game Server]: Loading .env file failed");
