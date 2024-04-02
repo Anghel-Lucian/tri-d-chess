@@ -38,8 +38,9 @@ The flow looks like so:
 1. Two clients register themselves on the Player Queue;
 2. Player Queue creates an active game in the single DB;
 3. Player Queue sends a request to Game server to signal that a game has started;
-4. When a client makes a move, a serialized version of that move is sent to the game server and subsequently stored in the DB;
-5. The UI then sends a subscription request to the game server for each client. The two connections will then be used to push the events from the service to the UI.
+4. The UI then sends a subscription request to the game server for each client. The two connections will then be used to push the events from the service to the UI.
+5. When a client makes a move, a serialized version of that move is sent to the game server and subsequently stored in the DB;
+6. The move is published to the other player via the connection initiated by the UI on step 4.
 
 When it comes to facilitating the interaction between two players, SSEs are used. The vital thing here is that the rows of the DB should be locked such that we prevent a race condition where the current turn is in an erroneous state.
 
