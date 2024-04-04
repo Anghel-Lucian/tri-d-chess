@@ -4,6 +4,11 @@ import (
     "fmt"
 )
 
+// TODO: the Move struct and all its associated operations could
+// be used to store it into an active_game_moves table. This is a
+// feature that won't be implemented atm, we'll only keep track of who's
+// turn it is, and so all the validation regarding who's one or not will be
+// done in the UI
 type PieceName string;
 type Color string;
 type AttackBoardType string;

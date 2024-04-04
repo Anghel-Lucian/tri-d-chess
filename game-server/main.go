@@ -20,7 +20,7 @@ import (
 
 type Env struct {
     DevelopmentRun bool;
-    Db *models.DB;
+    Db models.DBClient;
 }
 
 var LocalEnv Env = Env{};
@@ -44,21 +44,26 @@ func main() {
     http.HandleFunc("/game-subscribe", gameSubscribe);
 
     go func() {
+        dbCtx, cancelDbCtx := context.WithCancel(context.Background());
+        defer cancelDbCtx();
+
         LocalEnv.Db = &models.DB{};
         // TODO: connect to DB initial error handling and retries
-        LocalEnv.Db.InitDB(loadVariable("DATABASE_URL"));
+        LocalEnv.Db.InitDB(dbCtx, loadVariable("DATABASE_URL"));
+
+        defer LocalEnv.Db.Release();
         if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
             log.Fatalf("HTTP server error: %v", err);
         }
         log.Println("Stopped serving new connections.");
     }()
 
+    shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10 * time.Second);
+    defer shutdownRelease();
+
     var sigChan chan os.Signal = make(chan os.Signal, 1);
     signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM);
     <-sigChan
-
-    shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10 * time.Second);
-    defer shutdownRelease();
 
     if err := server.Shutdown(shutdownCtx); err != nil {
         log.Fatalf("HTTP shutdown error: %v", err);
@@ -66,9 +71,21 @@ func main() {
     log.Println("Shutdown complete.");
 }
 
+// TODO: you should always return JSON, regardless of request
 func getHello(w http.ResponseWriter, r *http.Request) {
     fmt.Printf("Get hello called");
-    LocalEnv.Db.GameExists(uuid.New().String());
+
+    requestCtx, cancelRequestCtx := context.WithTimeout(context.Background(), 5 * time.Second);
+    defer cancelRequestCtx();
+
+    gameExists, err := LocalEnv.Db.GameExists(requestCtx, uuid.New().String());
+
+    fmt.Printf("Game exists: %v\n", gameExists);
+
+    if err != nil {
+        log.Printf("[register-game] Error while querying DB for checking existance of game\n");
+    }
+
     io.WriteString(w, "Hello from game-server\n");
 }
 
