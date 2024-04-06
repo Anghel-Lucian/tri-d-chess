@@ -15,7 +15,7 @@ import (
 
     "github.com/google/uuid"
 
-    "game-server/models"
+    "game-server/internal/models"
 )
 
 type Env struct {
@@ -42,6 +42,7 @@ func main() {
 
     http.HandleFunc("/register-game", getHello);
     http.HandleFunc("/game-subscribe", gameSubscribe);
+    http.HandleFunc("/move", handleMove);
 
     go func() {
         dbCtx, cancelDbCtx := context.WithCancel(context.Background());
@@ -83,10 +84,31 @@ func getHello(w http.ResponseWriter, r *http.Request) {
     fmt.Printf("Game exists: %v\n", gameExists);
 
     if err != nil {
-        log.Printf("[register-game] Error while querying DB for checking existance of game\n");
+        log.Printf("[register-game] Error while querying DB for checking existance of game");
     }
 
     io.WriteString(w, "Hello from game-server\n");
 }
 
+// TODO: arrange each handler and put them in their own packages maybe
+func handleMove(w http.ResponseWriter, r *http.Request) {
+    queryParameters := r.URL.Query();
 
+    gameId := queryParameters.Get("gameId");
+
+    if len(gameId) == 0 {
+        handleBadRequest(&w, r, "[Move] gameId is a required parameter", 0);
+        return;
+    }
+
+    requestCtx, cancelRequestCtx := context.WithTimeout(context.Background(), 5 * time.Second);
+    defer cancelRequestCtx();
+
+    err := LocalEnv.Db.SwitchTurn(requestCtx, gameId);
+
+    if err != nil {
+        log.Printf("[move] Error while switching turn");
+    }
+
+    io.WriteString(w, "Move it move it\n");
+}

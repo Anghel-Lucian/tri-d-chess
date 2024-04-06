@@ -7,6 +7,7 @@ import (
     "math/rand"
 )
 
+// TODO: use *sync.Map
 var gameSubscribers map[string]map[string]*http.ResponseWriter = map[string]map[string]*http.ResponseWriter{};
 
 // TODO: you'll keep the connections (the responseWriter) in memory

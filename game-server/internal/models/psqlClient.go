@@ -3,8 +3,9 @@ package models
 import (
 	"context"
 	"log"
+    "errors"
 
-	//"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -40,7 +41,6 @@ func (db *DB) InitDB(ctx context.Context, dbUrl string) error {
 
 func (db *DB) Release() error {
     log.Printf("Releasing DB connections.");
-    // TODO: check for error handling
     db.ConnectionPool.Close();
     return nil;
 }
@@ -80,16 +80,45 @@ func (db *DB) GameExists(ctx context.Context, gameId string) (gameExists bool, e
 
 // TODO: this
 // TODO: the connection can be closed only after the rows returned by QueryRow are scanned;
-// i.e., Rows.Scan() is called on them
+// i.e., Rows.Scan() is called on them. That's for INSERT with RETURNING query or SELECT query
 func (db *DB) SwitchTurn(ctx context.Context, gameId string) error {
-    //tx, err := db.ConnectionPool.BeginTx(ctx, pgx.TxOptions{});
+    tx, err := db.ConnectionPool.BeginTx(ctx, pgx.TxOptions{});
 
-    //if err != nil {
-        log.Printf("[Turn] Error while acquiring transaction\n");
-     //   return err;
-   // }
+    if err != nil {
+        log.Printf("[SwitchTurn] Error while acquiring transaction: %v", err);
+        return err;
+    }
 
-    //tx.QueryRow()
+    defer func() {
+        if err != nil {
+            log.Printf("[SwitchTurn] Rolling back transaction...");
+            tx.Rollback(ctx);
+        } else {
+            tx.Commit(ctx);
+        }
+    }()
+
+    commandTag, err := tx.Exec(
+        ctx,
+        `UPDATE active_game SET turn = turn_identifier(
+            CASE WHEN active_game.turn = 'white' THEN 'black'
+                 WHEN active_game.turn = 'black' THEN 'white'
+            END)
+        WHERE uid = $1
+        `,
+        gameId,
+    );
+
+    if err != nil {
+        log.Printf("[SwitchTurn] Error executing query: %v", err);
+        return err;
+    }
+
+    if commandTag.RowsAffected() != 1 {
+        err := errors.New("No rows were affected by UPDATE call. Bad UPDATE");
+        log.Printf("[SwitchTurn] Bad result after executing query: %v", err);
+        return err;
+    }
 
     return nil; 
 }
