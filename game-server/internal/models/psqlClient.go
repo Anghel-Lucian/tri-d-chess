@@ -78,9 +78,6 @@ func (db *DB) GameExists(ctx context.Context, gameId string) (gameExists bool, e
     }
 }
 
-// TODO: this
-// TODO: the connection can be closed only after the rows returned by QueryRow are scanned;
-// i.e., Rows.Scan() is called on them. That's for INSERT with RETURNING query or SELECT query
 func (db *DB) SwitchTurn(ctx context.Context, gameId string) error {
     tx, err := db.ConnectionPool.BeginTx(ctx, pgx.TxOptions{});
 
@@ -123,4 +120,59 @@ func (db *DB) SwitchTurn(ctx context.Context, gameId string) error {
     return nil; 
 }
 
+func (db *DB) FinishGame(ctx context.Context, game FinishedActiveGame) error {
+    tx, err := db.ConnectionPool.BeginTx(ctx, pgx.TxOptions{});
+
+    if err != nil {
+        log.Printf("[FinishGame] Error while acquiring transaction: %v", err);
+        return err;
+    }
+
+    defer func() {
+        if err != nil {
+            log.Printf("[FinishGame] Rolling back transaction...");
+            tx.Rollback(ctx);
+        } else {
+            tx.Commit(ctx);
+        }
+    }()
+
+    commandTag, err := tx.Exec(
+        ctx,
+        "DELETE FROM active_game * WHERE uid = $1",
+        game.GameId,
+    );
+
+    if err != nil {
+        log.Printf("[FinishGame] Error executing delete: %v", err);
+        return err;
+    }
+
+    if commandTag.RowsAffected() != 1 {
+        err := errors.New("No rows were affected by DELETE call. Bad DELETE");
+        log.Printf("[FinishGame] Bad result after executing query: %v", err);
+        return err;
+    }
+
+    commandTag, err = tx.Exec(
+        ctx,
+        "INSERT INTO game (winner, loser, forfeited) VALUES ($1, $2, $3)",
+        game.Winner,
+        game.Loser,
+        game.Forfeited,
+    );
+
+    if err != nil {
+        log.Printf("[FinishGame] Error executing insert: %v", err);
+        return err;
+    }
+
+    if commandTag.RowsAffected() != 1 {
+        err := errors.New("No rows were affected by INSERT call. Bad INSERT");
+        log.Printf("[FinishGame] Bad result after executing query: %v", err);
+        return err;
+    }
+
+    return nil;
+}
 

@@ -9,5 +9,6 @@ type DBClient interface {
     Release() error
     GameExists(ctx context.Context, gameId string) (gameExists bool, err error)
     SwitchTurn(ctx context.Context, gameId string) error
+    FinishGame(ctx context.Context, game FinishedActiveGame) error
 }
 

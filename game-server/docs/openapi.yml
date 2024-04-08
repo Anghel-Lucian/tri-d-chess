@@ -71,6 +71,37 @@ paths:
           description: User not found in DB
         '500':
           description: Internal server error
+  /finish-game:
+    post:
+      tags:
+        - Game state
+      summary: Finish an active game
+      description: Provided a game ID, winner and loser IDs, and whether the game was forfeited or not, this API will remove an entry from the active game set, and insert the game into the finished games set.
+      operationId: finishGame
+      requestBody:
+        description: Finished game data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinishedGamePayload'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/FinishedGamePayload'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinishedGamePayload'
+        required: true
+      responses:
+        '200':
+          description: Game finished successfully
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '404':
+          description: Active game or users not found in DB
+        '500':
+          description: Internal server error
   /updates:
     get:
       tags:
@@ -95,7 +126,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameUpdateEvent' 
+                $ref: '#/components/schemas/GameUpdateEvent'
 components:
   schemas:
     GameRegisterACK:
@@ -135,6 +166,37 @@ components:
           type: boolean
       xml:
         name: gameUpdateEvent
+    FinishedGame:
+      type: object
+      required:
+        - winner
+        - loser
+        - gameId
+        - forfeited
+      properties:
+        winner:
+          type: string
+          format: uuid
+        loser:
+          type: string
+          format: uuid
+        gameId:
+          type: string
+          format: uuid
+        forfeited:
+          type: boolean
+      xml:
+        name: finishedGame
+    FinishedGamePayload:
+      type: object
+      required:
+        - message
+        - data
+      properties:
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/FinishedGame'
     Move:
       type: object
       required:

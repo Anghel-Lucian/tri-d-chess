@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -11,11 +12,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-    "time"
+	"time"
 
-    "github.com/google/uuid"
+	"github.com/google/uuid"
 
-    "game-server/internal/models"
+	"game-server/internal/models"
 )
 
 type Env struct {
@@ -43,6 +44,7 @@ func main() {
     http.HandleFunc("/register-game", getHello);
     http.HandleFunc("/game-subscribe", gameSubscribe);
     http.HandleFunc("/move", handleMove);
+    http.HandleFunc("/finish-game", handleFinishGame);
 
     go func() {
         dbCtx, cancelDbCtx := context.WithCancel(context.Background());
@@ -112,3 +114,26 @@ func handleMove(w http.ResponseWriter, r *http.Request) {
 
     io.WriteString(w, "Move it move it\n");
 }
+
+// TODO: use this in the models.DB interface when moving an active game to finished
+// TODO: forfeited is false always for some reason, check with CURL
+func handleFinishGame(w http.ResponseWriter, r *http.Request) {
+    var game models.FinishedActiveGame;
+
+    // TODO: check if data is valid
+    err := json.NewDecoder(r.Body).Decode(&game);
+
+    if err != nil {
+        log.Printf("[Finish Game] Error when finishing game: %v", err);
+    }
+
+    requestCtx, cancelRequestCtx := context.WithTimeout(context.Background(), 5 * time.Second);
+    defer cancelRequestCtx();
+
+    fmt.Printf("Game: %v", game);
+
+    LocalEnv.Db.FinishGame(requestCtx, game);
+
+    io.WriteString(w, "finish game\n");
+}
+
