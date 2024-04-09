@@ -1,8 +1,8 @@
-package main
+package utils
 
 import "net/http"
 
-func setDefaultHeaders(w *http.ResponseWriter) {
+func SetDefaultHeaders(w *http.ResponseWriter) {
     (*w).Header().Set("X-Content-Type-Options", "nosniff"); 
     (*w).Header().Set("Referrer-Policy", "strict-origin-when-cross-origin");
     (*w).Header().Set("Strict-Transport-Security", "max-age=86400; includeSubDomains");

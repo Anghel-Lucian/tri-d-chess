@@ -2,11 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -14,47 +11,40 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
-
-	"game-server/internal/models"
+    "game-server/internal/env"
+    "game-server/internal/handlers"
 )
-
-type Env struct {
-    DevelopmentRun bool;
-    Db models.DBClient;
-}
-
-var LocalEnv Env = Env{};
 
 // TODO: server sends updates even after the client is down, didn't test for more than 10 seconds to see what happens
 // TODO: when receiving a request, how to identify what client to send an update to?
 // TODO: connect to DB logic
 // TODO: query DB logic
 func main() {
-    flag.BoolVar(&LocalEnv.DevelopmentRun, "dev", false, "Start the server in development mode");
+    flag.BoolVar(&env.LocalEnv.DevelopmentRun, "dev", false, "Start the server in development mode");
 
     flag.Parse();
 
-    serverPort := loadVariable("GAME_SERVER_PORT");
+    serverPort := env.LoadVariable("GAME_SERVER_PORT");
 
     server := &http.Server{
         Addr: serverPort,
     };
 
-    http.HandleFunc("/register-game", getHello);
-    http.HandleFunc("/game-subscribe", gameSubscribe);
-    http.HandleFunc("/move", handleMove);
-    http.HandleFunc("/finish-game", handleFinishGame);
+    http.HandleFunc("/register-game", handlers.RegisterGame);
+    http.HandleFunc("/updates-subscribe", handlers.UpdatesSubscribe);
+    http.HandleFunc("/move", handlers.Move);
+    http.HandleFunc("/finish-game", handlers.FinishGame);
 
     go func() {
-        dbCtx, cancelDbCtx := context.WithCancel(context.Background());
-        defer cancelDbCtx();
+        err := env.InitEnv();
 
-        LocalEnv.Db = &models.DB{};
-        // TODO: connect to DB initial error handling and retries
-        LocalEnv.Db.InitDB(dbCtx, loadVariable("DATABASE_URL"));
+        if err != nil {
+            log.Fatalf("Error when initializing environment: %v", err);
+            return;
+        }
 
-        defer LocalEnv.Db.Release();
+        defer env.ReleaseEnv();
+
         if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
             log.Fatalf("HTTP server error: %v", err);
         }
@@ -72,68 +62,5 @@ func main() {
         log.Fatalf("HTTP shutdown error: %v", err);
     }
     log.Println("Shutdown complete.");
-}
-
-// TODO: you should always return JSON, regardless of request
-func getHello(w http.ResponseWriter, r *http.Request) {
-    fmt.Printf("Get hello called");
-
-    requestCtx, cancelRequestCtx := context.WithTimeout(context.Background(), 5 * time.Second);
-    defer cancelRequestCtx();
-
-    gameExists, err := LocalEnv.Db.GameExists(requestCtx, uuid.New().String());
-
-    fmt.Printf("Game exists: %v\n", gameExists);
-
-    if err != nil {
-        log.Printf("[register-game] Error while querying DB for checking existance of game");
-    }
-
-    io.WriteString(w, "Hello from game-server\n");
-}
-
-// TODO: arrange each handler and put them in their own packages maybe
-func handleMove(w http.ResponseWriter, r *http.Request) {
-    queryParameters := r.URL.Query();
-
-    gameId := queryParameters.Get("gameId");
-
-    if len(gameId) == 0 {
-        handleBadRequest(&w, r, "[Move] gameId is a required parameter", 0);
-        return;
-    }
-
-    requestCtx, cancelRequestCtx := context.WithTimeout(context.Background(), 5 * time.Second);
-    defer cancelRequestCtx();
-
-    err := LocalEnv.Db.SwitchTurn(requestCtx, gameId);
-
-    if err != nil {
-        log.Printf("[move] Error while switching turn");
-    }
-
-    io.WriteString(w, "Move it move it\n");
-}
-
-// TODO: use this in the models.DB interface when moving an active game to finished
-// TODO: forfeited is false always for some reason, check with CURL
-func handleFinishGame(w http.ResponseWriter, r *http.Request) {
-    var game models.FinishedActiveGame;
-
-    // TODO: check if data is valid
-    err := json.NewDecoder(r.Body).Decode(&game);
-
-    if err != nil {
-        log.Printf("[Finish Game] Error when finishing game: %v", err);
-    }
-
-    requestCtx, cancelRequestCtx := context.WithTimeout(context.Background(), 5 * time.Second);
-    defer cancelRequestCtx();
-
-    fmt.Printf("Game: %v", game);
-
-    LocalEnv.Db.FinishGame(requestCtx, game);
-
-    io.WriteString(w, "finish game\n");
 }
 

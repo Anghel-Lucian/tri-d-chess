@@ -1,12 +1,13 @@
-package main
+package env
 
 import (
     "os"
+    "log"
 
     "github.com/joho/godotenv"
 )
 
-func loadVariable(key string) string {
+func LoadVariable(key string) string {
     var fileName string;
 
     if LocalEnv.DevelopmentRun {
@@ -18,9 +19,8 @@ func loadVariable(key string) string {
     err := godotenv.Load(fileName);
 
     if err != nil {
-        panic("[Game Server]: Loading .env file failed");
+        log.Fatalf("[Game Server]: Loading .env file failed");
     }
 
     return os.Getenv(key);
 }
-
