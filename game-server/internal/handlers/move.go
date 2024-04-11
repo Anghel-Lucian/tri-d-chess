@@ -1,34 +1,45 @@
 package handlers
 
 import (
-   "net/http"
-   "log"
-   "context"
-   "io"
-   "time"
+	"context"
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
 
-   "game-server/internal/env"
-   "game-server/internal/handlers/utils"
+	"game-server/internal/env"
+	"game-server/internal/handlers/utils"
+	"game-server/internal/models"
 )
 
 func Move(w http.ResponseWriter, r *http.Request) {
-    queryParameters := r.URL.Query();
+    var move models.Move;
 
-    gameId := queryParameters.Get("gameId");
+    err := json.NewDecoder(r.Body).Decode(&move);
 
-    if len(gameId) == 0 {
-        utils.BadRequest(&w, r, "[Move] gameId is a required parameter", 0);
+    if err != nil {
+        log.Printf("[Move] Error reading move payload");
+        BadRequest(&w, r, "[Move] Error reading move payload", http.StatusInternalServerError);
         return;
     }
 
     requestCtx, cancelRequestCtx := context.WithTimeout(context.Background(), 5 * time.Second);
     defer cancelRequestCtx();
 
-    err := env.LocalEnv.DB.SwitchTurn(requestCtx, gameId);
+    err = env.LocalEnv.DB.SwitchTurn(requestCtx, move.GameId);
 
     if err != nil {
-        log.Printf("[move] Error while switching turn");
+        log.Printf("[Move] Error while switching turn");
+        BadRequest(&w, r, "[Move] Error while switching turn", http.StatusInternalServerError);
+        return;
     }
 
-    io.WriteString(w, "Move it move it\n");
+    responsePayload := ResponsePayload{
+        Message: "[Move] Stored successfully, changing turn",
+    }
+
+    utils.SetDefaultHeaders(&w); 
+    w.WriteHeader(http.StatusOK);
+    json.NewEncoder(w).Encode(responsePayload);
+    return;
 }

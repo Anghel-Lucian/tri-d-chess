@@ -17,8 +17,6 @@ import (
 
 // TODO: server sends updates even after the client is down, didn't test for more than 10 seconds to see what happens
 // TODO: when receiving a request, how to identify what client to send an update to?
-// TODO: connect to DB logic
-// TODO: query DB logic
 func main() {
     flag.BoolVar(&env.LocalEnv.DevelopmentRun, "dev", false, "Start the server in development mode");
 

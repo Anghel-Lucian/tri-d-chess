@@ -51,46 +51,46 @@ const (
 )
 
 type Move struct {
-    piece struct {
-        name PieceName;
-        color Color;
-    };
-    eaten bool;
-    checkmate bool;
-    attackBoard *struct {
-        attackBoardType AttackBoardType;
-        color Color;
-        captured bool;
-    };
-    startCell struct {
-       x int;
-       y int;
-       boardType FullBoardType;
-       attackBoardColor Color;
-    };
-    endCell struct {
-       x int;
-       y int;
-       boardType FullBoardType;
-       attackBoardColor Color;
-    };
-    gameId string;
-    playerId string;
+    Piece struct {
+        Name PieceName `json:"name"`;
+        Color Color `json:"color"`;
+    } `json:"piece"`;
+    Eaten bool `json:"eaten"`;
+    Checkmate bool `json:"checkmate"`;
+    AttackBoard *struct {
+        AttackBoardType AttackBoardType `json:"attackBoardType"`;
+        Color Color `json:"color"`;
+        Captured bool `json:"captured"`;
+    } `json:"attackBoard,omitempty"`;
+    StartCell struct {
+        X int `json:"x"`;
+        Y int `json:"y"`;
+        BoardType FullBoardType `json:"boardType"`;
+        AttackBoardColor Color `json:"attackBoardColor"`;
+    } `json:"startCell"`;
+    EndCell struct {
+        X int `json:"x"`;
+        Y int `json:"y"`;
+        BoardType FullBoardType `json:"boardType"`;
+        AttackBoardColor Color `json:"attackBoardColor"`;
+    } `json:"endCell"`;
+    GameId string `json:"gameId"`;
+    PlayerId string `json:"playerId"`;
 }
 
 func (move *Move) Print() {
     fmt.Printf("Move: \n");
-    fmt.Printf("moved piece: %v; Color: %v\n", move.piece.name, move.piece.color);
+    fmt.Printf("moved piece: %v; Color: %v\n", move.Piece.Name, move.Piece.Color);
     fmt.Printf("start cell:\n");
     fmt.Printf(
         "x: %d; y: %d; boardType: %v; attackBoardColor: %v\n", 
-        move.startCell.x,
-        move.startCell.y,
-        move.startCell.boardType,
-        move.startCell.attackBoardColor,
+        move.StartCell.X,
+        move.StartCell.Y,
+        move.StartCell.BoardType,
+        move.StartCell.AttackBoardColor,
     );
 
-    if move.eaten {
+    if move.Eaten {
         fmt.Printf("the player ate an opponent's piece at cell:\n");
     } else {
         fmt.Printf("end cell:\n");
@@ -98,14 +98,14 @@ func (move *Move) Print() {
 
     fmt.Printf(
         "x: %d; y: %d; boardType: %v; attackBoardColor: %v\n", 
-        move.endCell.x,
-        move.endCell.y,
-        move.endCell.boardType,
-        move.endCell.attackBoardColor,
+        move.EndCell.X,
+        move.EndCell.Y,
+        move.EndCell.BoardType,
+        move.EndCell.AttackBoardColor,
     );
 
-    if move.attackBoard != nil  {
-        if move.attackBoard.captured {
+    if move.AttackBoard != nil  {
+        if move.AttackBoard.Captured {
             fmt.Printf("the player moved his piece on an opponent's attack board:\n");
         } else {
             fmt.Printf("the player moved his piece on one of his attack boards:\n");
@@ -113,12 +113,12 @@ func (move *Move) Print() {
 
         fmt.Printf(
             "attackBoardType: %v; attackBoardColor: %v\n",
-            move.attackBoard.attackBoardType,
-            move.attackBoard.color,
+            move.AttackBoard.AttackBoardType,
+            move.AttackBoard.Color,
         );
     }
 
-    fmt.Printf("playerId: %s\n", move.playerId);
-    fmt.Printf("gameId: %s\n", move.gameId);
+    fmt.Printf("playerId: %s\n", move.PlayerId);
+    fmt.Printf("gameId: %s\n", move.GameId);
 }
 

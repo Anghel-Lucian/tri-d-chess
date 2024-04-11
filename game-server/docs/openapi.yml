@@ -102,7 +102,7 @@ paths:
           description: Active game or users not found in DB
         '500':
           description: Internal server error
-  /updates:
+  /updates-subscribe:
     get:
       tags:
         - Game state
@@ -166,7 +166,7 @@ components:
           type: boolean
       xml:
         name: gameUpdateEvent
-    FinishedGame:
+    FinishedGamePayload:
       type: object
       required:
         - winner
@@ -187,21 +187,14 @@ components:
           type: boolean
       xml:
         name: finishedGame
-    FinishedGamePayload:
-      type: object
-      required:
-        - message
-        - data
-      properties:
-        message:
-          type: string
-        data:
-          $ref: '#/components/schemas/FinishedGame'
-    Move:
+    MovePayload:
       type: object
       required:
         - startCell
         - endCell
+        - gameId
+        - playerId
+        - piece
       properties:
         piece:
           $ref: '#/components/schemas/Piece'
@@ -215,23 +208,14 @@ components:
           $ref: '#/components/schemas/Cell'
         endCell:
           $ref: '#/components/schemas/Cell'
-      xml:
-        name: move
-    MovePayload:
-      type: object
-      required:
-        - move
-        - gameId
-        - playerId
-      properties:
-        move:
-          $ref: '#/components/schemas/Move'
         gameId:
           type: string
           format: uuid
         playerId:
           type: string
           format: uuid
+      xml:
+        name: move
     Piece:
       type: object
       required:

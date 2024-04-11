@@ -1,8 +1,11 @@
-package utils
+package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+
+	"game-server/internal/handlers/utils"
 )
 
 func BadRequest(w *http.ResponseWriter, r *http.Request, message string, code int) {
@@ -13,10 +16,13 @@ func BadRequest(w *http.ResponseWriter, r *http.Request, message string, code in
     } else {
         (*w).WriteHeader(http.StatusBadRequest); 
     }
-    
-    SetDefaultHeaders(w);
-    (*w).Header().Set("Content-Type", "text/plain");
-    (*w).Write([]byte("Message: " + message));
+   
+    responsePayload := ResponsePayload{
+        Message: message,
+    };
+
+    utils.SetDefaultHeaders(w);
+    json.NewEncoder(*w).Encode(responsePayload);
     return;
 }
 
