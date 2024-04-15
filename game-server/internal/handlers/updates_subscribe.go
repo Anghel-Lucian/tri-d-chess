@@ -1,17 +1,22 @@
 package handlers
 
 import (
-	"fmt"
-	"math/rand"
 	"net/http"
 	"sync"
-	"time"
-    "context"
-    "log"
+    "encoding/json"
+	"context"
+	"log"
 
 	"game-server/internal/env"
 	"game-server/internal/handlers/utils"
 )
+
+type GameSubscribersEntry struct {
+    PlayerMap map[string]*http.ResponseWriter;
+    SharedCtx context.Context; 
+    CancelSharedCtx context.CancelFunc;
+}
+
 var Subscribers *sync.Map = &sync.Map{};
 
 // 1. Use syncMap instead of map
@@ -49,7 +54,9 @@ func UpdatesSubscribe(w http.ResponseWriter, r *http.Request) {
     // because we're keeping the connection alive to send events. But I don't think
     // it has to do with anything, because this is only the request to register a subscriber
     // not send the actual events (even though we do that now, it's just for testing)
-    requestCtx, cancelRequestCtx := context.WithTimeout(context.Background(), 5 * time.Second);
+    // TODO: do we want to cancel the requestCtx after this returns? Or do we want to keep it
+    // in our map with the subcribers?
+    requestCtx, cancelRequestCtx := context.WithCancel(context.Background());
     defer cancelRequestCtx();
 
     gameExists, err := env.LocalEnv.DB.GameExists(requestCtx, gameId);
@@ -65,16 +72,36 @@ func UpdatesSubscribe(w http.ResponseWriter, r *http.Request) {
         return;
     }
 
-
     if len(playerId) == 0 {
         BadRequest(&w, r, "[Game Subscribe] playerId is a required parameter", 0);
+        return;
+    }
+
+    playerExists, err := env.LocalEnv.DB.PlayerExists(requestCtx, playerId);
+
+    if err != nil {
+        log.Printf("[Game Subscribe] error when checking if player exists: %v", err);
+        BadRequest(&w, r, "[Game Subscribe] error when checking if player exists", http.StatusInternalServerError);
+        return;
+    }
+
+    if !playerExists {
+        BadRequest(&w, r, "[Game Subscribe] player does not exist", http.StatusNotFound);
         return;
     }
 
     _, ok := Subscribers.Load(gameId);
 
     if (!ok) {
-        Subscribers.Store(gameId, map[string]*http.ResponseWriter{});
+        sharedCtx, cancelSharedCtx := context.WithCancel(context.Background());
+
+        entry := GameSubscribersEntry{
+            PlayerMap: map[string]*http.ResponseWriter{},
+            SharedCtx: sharedCtx,
+            CancelSharedCtx: cancelSharedCtx,
+        }
+
+        Subscribers.Store(gameId, entry);
     }
 
     // TODO: if you get another request with the same playerId then stop sending updates to the
@@ -82,24 +109,39 @@ func UpdatesSubscribe(w http.ResponseWriter, r *http.Request) {
     // TODO: ensure that updates are no longer sent if the connection times out or the connection closes
     // TODO: you probably have to queue events if you want your users not to lose anything in case
     // the connection falters. You have to handle the case where a user drops off, and then comes back up
-    // TODO: evalutate if using channels instead of maps for storing the subscribers is better? I dont
-    // think so. If we were to have an arbitrary number of events then maybe we could store the events
-    // in channels, but we don't.
-    gameEntry, _ := Subscribers.Load(gameId);
-    gameEntryMap, _ := gameEntry.(map[string]*http.ResponseWriter);
+    entry, _ := Subscribers.Load(gameId);
+    gameEntry, _ := entry.(GameSubscribersEntry);
+    gameEntryMap := gameEntry.PlayerMap;
     gameEntryMap[playerId] = &w;
-    
+   
     utils.SetDefaultHeaders(&w);
     w.Header().Set("Content-Type", "text/event-stream");
     w.Header().Set("Connection", "keep-alive");
 
     // TODO: for some reason events are sent even after the client closes the connection
     // find out why and how to solve it
-    for {
-        fmt.Printf("Sending update...\n");
-        fmt.Fprintf(w, "%d\n", rand.Intn(100));
-        w.(http.Flusher).Flush();
-        time.Sleep(2 * time.Second);
+    err = SendAck(&w);
+
+    if err != nil {
+        delete(gameEntryMap, playerId);
+        log.Printf("[Game Subscribe] error sending ACK event: %v", err);
+        BadRequest(&w, r, "[Game Subscribe] could not ACK", http.StatusInternalServerError);
+    }
+
+    // TODO: create an error channel and put it in the GameSubscribersEntry struct.
+    // Functions that send updates should push to it when an error occured when pushing
+    // a new event or related to it
+    select {
+    case <-gameEntry.SharedCtx.Done():
+        Subscribers.Delete(gameId);
+        log.Printf("[Game Subscribe] context canceled. Deleting all writers for game %v", gameId);
+
+        responsePayload := ResponsePayload{
+            Message: "[Game Subscribe] closing all channels, updates finished",
+        }
+
+        json.NewEncoder(w).Encode(responsePayload);
+        return;
     }
 }
 

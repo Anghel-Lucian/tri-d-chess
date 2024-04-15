@@ -72,9 +72,42 @@ func (db *DB) GameExists(ctx context.Context, gameId string) (gameExists bool, e
 
     if !typeAssertionOk {
         log.Printf("[GameExists] Type assertion error: values[0] does not hold a bool"); 
-        return false, nil;
+        return false, errors.New("[GameExists] error when asserting bool type");
     } else {
         return gameExists, nil;
+    }
+}
+
+func (db *DB) PlayerExists(ctx context.Context, playerId string) (playerExists bool, err error) {
+    var typeAssertionOk bool;
+
+    rows, err := db.ConnectionPool.Query(
+        ctx,
+        "SELECT EXISTS (SELECT * FROM users WHERE uid = $1)",
+        playerId,
+    );
+
+    if err != nil {
+        log.Printf("[PlayerExists] Error while executing query: %v", err);
+        return false, err;
+    }
+
+    for rows.Next() {
+        values, err := rows.Values();
+
+        if err != nil {
+            log.Printf("[PlayerExists] Error while reading rows: %v", err);
+            return false, err;
+        }
+
+        playerExists, typeAssertionOk = values[0].(bool);
+    }
+
+    if !typeAssertionOk {
+        log.Printf("[PlayerExists] Type assertion error: values[0] does not hold a bool"); 
+        return false, errors.New("[PlayerExists] error when asserting bool type");
+    } else {
+        return playerExists, nil;
     }
 }
 
