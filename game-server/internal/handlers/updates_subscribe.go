@@ -116,9 +116,11 @@ func UpdatesSubscribe(w http.ResponseWriter, r *http.Request) {
         delete(gameEntryMap, playerId);
         log.Printf("[Game Subscribe] error sending ACK event: %v", err);
         BadRequest(&w, r, "[Game Subscribe] could not ACK", http.StatusInternalServerError);
+        return;
     }
 
     select {
+    // This will cancel the goroutine for each subscriber
     case <-gameEntry.SharedCtx.Done():
         Subscribers.Delete(gameId);
         log.Printf("[Game Subscribe] context canceled. Deleting all writers for game %v", gameId);

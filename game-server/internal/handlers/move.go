@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+    "fmt"
 
 	"game-server/internal/env"
 	"game-server/internal/handlers/utils"
@@ -18,6 +19,9 @@ func Move(w http.ResponseWriter, r *http.Request) {
     var move models.Move;
 
     err := json.NewDecoder(r.Body).Decode(&move);
+
+    fmt.Printf("Move: %v\n", move);
+    move.Print();
 
     // TODO: validate if Move has all the correct fields, not empty and so on
     // might be that Decode does that for us, but I want to make sure
