@@ -34,6 +34,12 @@ func FinishGame(w http.ResponseWriter, r *http.Request) {
         return;
     }
 
+    // Cancel the context used by the event publishers
+    entry, _ := Subscribers.Load(game.GameId);
+    gameEntry, _ := entry.(GameSubscribersEntry);
+
+    gameEntry.CancelSharedCtx();
+
     responsePayload := ResponsePayload{
         Message: "[Finish Game] Finished successfully",
     }
