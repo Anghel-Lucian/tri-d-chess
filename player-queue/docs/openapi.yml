@@ -1,0 +1,119 @@
+openapi: 3.0.3
+info:
+  title: TriDChess Player Queue API
+  description: APIs for Tri D Chess game related to queueing for a game, dequeueing and creating private queues.
+  version: 1.0.0
+servers:
+  - url: https://tridchess.com/api/v1
+tags:
+  - name: Enqueue
+    description: APIs for enqueueing, i.e., a player entering a queue
+  - name: Dequeue
+    description: APIs for dequeueing
+paths:
+  /enqueue:
+    get:
+      tags:
+        - Enqueue
+      summary: Enqueue a player on the public player queue
+      description: Will insert a new player into the public queue. When finding another queued player, the service will create an active game, and send a request to signal this towards Game Server. The UI in turn will change for both players and render the boards and pieces. Players can only be queued on a single queue at a time.
+      operationId: enqueue
+      parameters:
+        - in: query
+          name: playerId
+          schema:
+            type: string
+          description: ID of the player that enters the public queue
+      responses:
+        '200':
+          description: ACK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnqueueResponse'          
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/EnqueueResponse'
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '500':
+          description: Internal server error
+  /private-enqueue:
+    post:
+      tags:
+        - Enqueue
+      summary: Enqueue in a private queue
+      description: If not private queue with the given name exists, then a new one is created and the player that made the call is enqueued in it. When a second call is made to that queue, the two players will start a match. The first player that made the call will receive a private password that he can share with his partner so the latter can enter the queue
+      operationId: privateEnqueue
+      requestBody:
+        description: Queue data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivateQueue'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/PrivateQueue'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrivateQueue'
+        required: true
+      responses:
+        '200':
+          description: Queue created or entered successfully
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '404':
+          description: User not found in DB
+        '500':
+          description: Internal server error
+  /dequeue:
+    get:
+      tags:
+        - Dequeue
+      summary: Dequeues a player from whatever queue he is in
+      description: Dequeues a player from whatever queue he is in. Player will exit the single queue he is in, be it private or public
+      parameters:
+        - in: query
+          name: playerId
+          schema:
+            type: string
+          description: ID of the player
+      responses:
+        '200':
+          description: Dequeued successfully
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '404':
+          description: User not in any queue
+        '500':
+          description: Internal server error
+components:
+  schemas:
+    EnqueueResponse:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+      xml:
+        name: enqueueResponse
+    PrivateQueue:
+      type: object
+      required:
+        - playerId
+        - name
+      properties:
+        playerId:
+          type: string
+        name:
+          type: string
+      xml:
+        name: privateQueue
