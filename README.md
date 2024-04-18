@@ -60,6 +60,19 @@ There is indeed a maximum connection limit that the system incurs with SSEs, but
 ### OpenAPI spec
 [Here](https://github.com/Anghel-Lucian/tri-d-chess/blob/master/game-server/docs/openapi.yml)
 
+## Player Queue
+This service queues players. More specifically, it sources two players from a certain queue and then creates a game in the DB and fires a request to Game Server to signal that a game should start.
+
+A user can choose to be queued in two types of queues:
+1. private - created by the user himself. When a request to create a private queue is fired from the UI, the service will respond with a private password that can be used by anyone the initiator wants to share the password with. The game will start when a second player will enter the private queue;
+2. public - the default queue. A user can enter this queue without a password and a game will start when another player will be matched with him.
+
+The flow can be represented like this:
+![The flow of queueing in a public and private queue depicted visually](https://github.com/Anghel-Lucian/tri-d-chess/blob/master/docs/player-q-public-private.png)
+
+### OpenAPI spec
+[Here](https://github.com/Anghel-Lucian/tri-d-chess/blob/master/player-queue/docs/openapi.yml)
+
 ## API Server
 ### OpenAPI spec
 [Here](https://github.com/Anghel-Lucian/tri-d-chess/blob/master/api-server/docs/openapi.yml)
