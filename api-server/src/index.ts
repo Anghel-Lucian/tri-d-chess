@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 import 'dotenv/config';
 
+// TODO: generate a session_id cookie on log in and store it in sessions
 import RequestParser from '@api/RequestParser.js';
 import RequestValidator from '@api/RequestValidator.js';
 import RequestHandler from '@api/RequestHandler.js';
@@ -28,9 +29,6 @@ server.on('error', (error: Error) => {
 
 server.on('request', async (request, response) => {
     console.log('Processing request');
-    //const dbInstance = DBConnection.getInstance();
-    //const user = await dbInstance.createNewUser("Lucian", "lucian@email.com", "verysecurepassword");
-    //console.log({user});
     requestParser.onRequest(request, response);
 });
 

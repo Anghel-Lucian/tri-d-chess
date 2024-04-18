@@ -10,3 +10,4 @@ cert.pem
 server.crt
 csr.pem
 game-server/game-server
+player-queue/player-queue

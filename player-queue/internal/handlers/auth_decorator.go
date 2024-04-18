@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-    "game-server/internal/env"
+    "player-queue/internal/env"
 )
 
 // Decorates a handler such that it checks if the request has a valid
