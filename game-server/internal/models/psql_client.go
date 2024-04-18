@@ -111,6 +111,39 @@ func (db *DB) PlayerExists(ctx context.Context, playerId string) (playerExists b
     }
 }
 
+func (db *DB) SessionExists(ctx context.Context, cookie string) (sessionExists bool, err error) {
+    var typeAssertionOk bool;
+
+    rows, err := db.ConnectionPool.Query(
+        ctx,
+        "SELECT EXISTS (SELECT * FROM sessions WHERE cookie = $1)",
+        cookie,
+    );
+
+    if err != nil {
+        log.Printf("[SessionExists] Error while executing query: %v", err);
+        return false, err;
+    }
+
+    for rows.Next() {
+        values, err := rows.Values();
+
+        if err != nil {
+            log.Printf("[SessionExists] Error while reading rows: %v", err);
+            return false, err;
+        }
+
+        sessionExists, typeAssertionOk = values[0].(bool);
+    }
+
+    if !typeAssertionOk {
+        log.Printf("[SessionExists] Type assertion error: values[0] does not hold a bool"); 
+        return false, errors.New("[SessionExists] error when asserting bool type");
+    } else {
+        return sessionExists, nil;
+    }
+}
+
 func (db *DB) SwitchTurn(ctx context.Context, gameId string) error {
     tx, err := db.ConnectionPool.BeginTx(ctx, pgx.TxOptions{});
 

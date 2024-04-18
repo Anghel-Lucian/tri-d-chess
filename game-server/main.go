@@ -29,8 +29,8 @@ func main() {
     };
 
     http.HandleFunc("/register-game", handlers.RegisterGame);
-    http.HandleFunc("/updates-subscribe", handlers.UpdatesSubscribe);
-    http.HandleFunc("/move", handlers.Move);
+    http.HandleFunc("/updates-subscribe", handlers.AuthCheckDecorator(handlers.UpdatesSubscribe));
+    http.HandleFunc("/move", handlers.AuthCheckDecorator(handlers.Move));
     http.HandleFunc("/finish-game", handlers.FinishGame);
 
     go func() {
