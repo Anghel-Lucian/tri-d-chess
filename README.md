@@ -17,13 +17,14 @@ The interaction between all of these looks something like so:
 ## Data layer
 The DB at the moment is PostgreSQL. The data is fully structured so there's no need for using something like MongoDB.
 
-There are 6 relations for this system:
+There are 7 relations for this system:
 1. `active_game` - keeping track of any matches that are taking place in the present;
 2. `users` - authenticated users, full with email, password, and username;
 3. `game` - a finished match that is not taking place in the present, where one of the players either won, lost or forfeited;
 4. `stats` - one-to-one relation with `users`, keeps track of general statistics of a player;
 5. `guest` - user that is not authenticated, without email. His username will be automatically assigned, and the entry will be deleted after some time from the DB;
-6. `stats_game` - only purpose is to keep track of the statistics entity to which a game is attached.
+6. `stats_game` - only purpose is to keep track of the statistics entity to which a game is attached;
+7. `sessions` - keeps track of session IDs, also used in authentication in addition to the user's credentials.
 
 The diagram looks like so:
 
