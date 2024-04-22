@@ -10,6 +10,8 @@ tags:
     description: APIs for enqueueing, i.e., a player entering a queue
   - name: Dequeue
     description: APIs for dequeueing
+  - name: Create Queue
+    description: APIs for managing queue creation
 paths:
   /enqueue:
     get:
@@ -26,14 +28,7 @@ paths:
           description: ID of the player that enters the public queue
       responses:
         '200':
-          description: ACK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnqueueResponse'          
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/EnqueueResponse'
+          description: Enqueued successfully
         '400':
           description: Invalid credentials
         '403':
@@ -41,34 +36,24 @@ paths:
         '500':
           description: Internal server error
   /private-enqueue:
-    post:
+    get:
       tags:
         - Enqueue
-      summary: Enqueue in a private queue
-      description: If not private queue with the given name exists, then a new one is created and the player that made the call is enqueued in it. When a second call is made to that queue, the two players will start a match. The first player that made the call will receive a private password that he can share with his partner so the latter can enter the queue
-      operationId: privateEnqueue
-      requestBody:
-        description: Queue data
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PrivateQueue'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/PrivateQueue'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PrivateQueue'
-        required: true
+      summary: Queues a player in a private queue
+      description: Given a correct queue password, the API will queue the player in a private queue. It is assumed that at least one player exists in that private queue already (its creator), and thus the game begins when the calling player (second player of the game) is enqueued.
+      parameters:
+        - in: query
+          name: password
+          schema:
+            type: string
+          description: Password for the queue
       responses:
         '200':
-          description: Queue created or entered successfully
+          description: Enqueued successfully
         '400':
           description: Invalid credentials
         '403':
           description: Black-listed or unwanted client
-        '404':
-          description: User not found in DB
         '500':
           description: Internal server error
   /dequeue:
@@ -94,9 +79,30 @@ paths:
           description: User not in any queue
         '500':
           description: Internal server error
+  /create-private-queue:
+    get:
+      tags:
+        - Create Queue
+      summary: Creates a queue with a private password that can be shared by the creator
+      description: Creates a private queue. The API will respond with a password that can be used to access the queue by other players in the "private-enqueue" API.
+      responses:
+        '200':
+          description: Dequeued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivateQueueResponse'
+        '400':
+          description: Invalid credentials
+        '403':
+          description: Black-listed or unwanted client
+        '404':
+          description: User not in any queue
+        '500':
+          description: Internal server error
 components:
   schemas:
-    EnqueueResponse:
+    PrivateQueueResponse:
       type: object
       required:
         - password
@@ -105,15 +111,3 @@ components:
           type: string
       xml:
         name: enqueueResponse
-    PrivateQueue:
-      type: object
-      required:
-        - playerId
-        - name
-      properties:
-        playerId:
-          type: string
-        name:
-          type: string
-      xml:
-        name: privateQueue
