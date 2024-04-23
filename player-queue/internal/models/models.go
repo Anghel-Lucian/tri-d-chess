@@ -12,5 +12,6 @@ type DBClient interface {
     SessionExists(ctx context.Context, cookie string) (sessionExists bool, err error)
     SwitchTurn(ctx context.Context, gameId string) error
     FinishGame(ctx context.Context, game FinishedActiveGame) error
+    CreateActiveGame(ctx context.Context, player1Id string, player2Id string) error
 }
 

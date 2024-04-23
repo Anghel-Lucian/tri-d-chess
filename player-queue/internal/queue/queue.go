@@ -56,3 +56,13 @@ func (q *Queue) RemoveWithin(val ListVal) ListVal {
     return node.val;
 }
 
+func (q *Queue) Len() int {
+    return q.items.Len();
+}
+
+func (q *Queue) Iterate(handler func(node *List)) {
+    if q.items.Len() > 1 {
+        q.items.next.Iterate(handler);
+    }
+}
+

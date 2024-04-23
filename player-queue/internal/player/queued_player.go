@@ -2,6 +2,8 @@ package player
 
 type QueuedPlayer struct {
     PlayerId string;
+    Username string;
+    TimeQueued uint64;
 }
 
 func (player *QueuedPlayer) Equals(compared any) bool {

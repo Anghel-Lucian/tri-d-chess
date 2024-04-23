@@ -242,3 +242,25 @@ func (db *DB) FinishGame(ctx context.Context, game FinishedActiveGame) error {
     return nil;
 }
 
+func (db *DB) CreateActiveGame(ctx context.Context, player1Id string, player2Id string) error {
+    commandTag, err := db.ConnectionPool.Exec(
+        ctx,
+        "INSERT INTO active_game (player1, player2) VALUES ($1, $2)",
+        player1Id,
+        player2Id,
+    );
+
+    if err != nil {
+        log.Printf("[CreateActivGame] Error executing insert: %v", err);
+        return err;
+    }
+
+    if commandTag.RowsAffected() != 1 {
+        err := errors.New("No rows were affected by INSERT call. Bad INSERT");
+        log.Printf("[CreateActiveGame] Bad result after executing query: %v", err);
+        return err;
+    }
+
+    return nil;
+}
+

@@ -70,3 +70,13 @@ func (l *List) Len() int {
     return length;
 }
 
+func (l *List) Iterate(handler func(node *List)) {
+    lPointer := l;
+
+    for lPointer != nil {
+        lPointer = lPointer.next;
+
+        handler(lPointer);
+    }
+}
+
