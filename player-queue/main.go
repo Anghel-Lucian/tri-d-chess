@@ -9,10 +9,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-    "player-queue/internal/env"
-    "player-queue/internal/handlers"
+	"player-queue/internal/env"
+	"player-queue/internal/handlers"
 )
 
 // TODO: server sends updates even after the client is down, didn't test for more than 10 seconds to see what happens
@@ -49,7 +48,7 @@ func main() {
         log.Println("Stopped serving new connections.");
     }()
 
-    shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10 * time.Second);
+    shutdownCtx, shutdownRelease := context.WithCancel(context.Background());
     defer shutdownRelease();
 
     var sigChan chan os.Signal = make(chan os.Signal, 1);

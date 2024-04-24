@@ -16,7 +16,7 @@ func NewQueue(name string) *Queue {
         items: &List{
             next: nil,
             prev: nil,
-            val: nil,
+            Val: nil,
         },
     }
 }
@@ -37,10 +37,12 @@ func (q *Queue) Dequeue() ListVal {
         return nil;
     }
 
-    return q.items.Remove(q.items.next).val; 
+    return q.items.Remove(q.items.next).Val; 
 }
 
-// Removes an element from between the head and tail
+// Removes an element from between the head and tail.
+// If val is not found, the function returns nil. else
+// it returns the removed value.
 func (q *Queue) RemoveWithin(val ListVal) ListVal {
     q.mu.Lock();
     defer q.mu.Unlock();
@@ -53,13 +55,14 @@ func (q *Queue) RemoveWithin(val ListVal) ListVal {
 
     q.items.Remove(node);
 
-    return node.val;
+    return node.Val;
 }
 
 func (q *Queue) Len() int {
     return q.items.Len();
 }
 
+// Will iterate over the elements next of the head of the list
 func (q *Queue) Iterate(handler func(node *List)) {
     if q.items.Len() > 1 {
         q.items.next.Iterate(handler);

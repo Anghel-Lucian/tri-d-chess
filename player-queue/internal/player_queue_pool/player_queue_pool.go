@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strconv"
 	"sync"
+	"time"
 
+	"player-queue/internal/env"
 	"player-queue/internal/player"
 	"player-queue/internal/queue"
 )
@@ -17,10 +20,12 @@ type PlayerQueuePool struct {
     mu sync.Mutex;
 }
 
-var QP *PlayerQueuePool;
+var qpInstance *PlayerQueuePool;
 
-func SyncGetPlayerQueuePoolInstance() *PlayerQueuePool {
-    if QP == nil {
+// Will return the Singleton instance of the PlayerQueuePool and also start
+// an eviction routine to run once every env.PLAYER_EVICTION_LIMIT seconds
+func SyncGetPlayerQueuePoolInstance(ctx context.Context) *PlayerQueuePool {
+    if qpInstance == nil {
         qpLock.Lock();
         defer qpLock.Unlock();
 
@@ -28,12 +33,33 @@ func SyncGetPlayerQueuePoolInstance() *PlayerQueuePool {
             "Public": queue.NewQueue("Public"),
         }
 
-        QP = &PlayerQueuePool{
+        qpInstance = &PlayerQueuePool{
             Queues: queueMap,
         };
+
+        go func() {
+            evictionLimit, err := strconv.Atoi(env.LoadVariable("PLAYER_EVICTION_LIMIT"));
+
+            if err != nil {
+                log.Printf("[QueuePool:SyncGetPlayerQueuePoolInstance:Goroutine] Error converting PLAYER_EVICTION_LIMIT to integer: %v", err);
+                return;
+            }
+
+            ticker := time.NewTicker(time.Duration(evictionLimit))
+
+            for {
+                select {
+                case <-ticker.C:
+                    qpInstance.SyncPollEvict();
+                case <-ctx.Done():
+                    ticker.Stop();
+                    return;
+                }
+            }
+        }()
     }
 
-    return QP;
+    return qpInstance;
 }
 
 func (qp *PlayerQueuePool) SyncCreateNewQueue(name string) error {
@@ -63,8 +89,7 @@ func (qp *PlayerQueuePool) SyncCreateNewQueue(name string) error {
 func (qp *PlayerQueuePool) SyncEnqueue(
     ctx context.Context, 
     queueName string, 
-    enqueuedPlayer *player.QueuedPlayer, // TODO: the caller of this function will have to call
-    // the API  to get the details (username most importantly)
+    enqueuedPlayerId string,
 ) (*player.QueuedPlayer, *player.QueuedPlayer, error) {
     qp.mu.Lock();
     defer qp.mu.Unlock();
@@ -76,6 +101,12 @@ func (qp *PlayerQueuePool) SyncEnqueue(
         log.Printf(message);
         return nil, nil, errors.New(message);
     }
+
+    enqueuedPlayer := &player.QueuedPlayer{
+        PlayerId: enqueuedPlayerId,
+        QueuedTimestamp: time.Now().Unix(),
+        QueuedOn: queueName,
+    };
 
     if queue.Len() > 0 {
         player2 := queue.Dequeue().(*player.QueuedPlayer);
@@ -134,7 +165,59 @@ func (qp *PlayerQueuePool) SyncDeletePlayerFromQueue(
     return nil;
 }
 
-func (qp *PlayerQueuePool) PollEvict(ctx context.Context) {
+// Iterate over existing queues and queued players.
+// If the queues are empty and they aren't the Public queue, remove them.
+// If the players enqueued in a queue have been there for more than 10 minutes,
+// evict them.
+// The degree of accuracy of eviction-on-time varies depending on the polling interval.
+// This function doesn't guarantee that a player will not spend more than 10 minutes on
+// a queues.
+func (qp *PlayerQueuePool) SyncPollEvict() {
+    var queuesScheduledForDeletion []string;
+    var playersScheduledForEviction []*player.QueuedPlayer;
 
+    evictionLimit, err := strconv.Atoi(env.LoadVariable("PLAYER_EVICTION_LIMIT"));
+
+    if err != nil {
+        log.Printf("[QueuePool:SyncPollEvict] Error converting PLAYER_EVICTION_LIMIT to integer: %v", err);
+        return;
+    }
+
+    // Unix timestamp before which if a player was queued,
+    // he'll be evicted
+    timeLimit := time.Now().Unix() - int64(evictionLimit);
+
+    for qName, q := range qp.Queues {
+        // find queues with no players
+        if q.Len() == 0 && qName != "Public" {
+            queuesScheduledForDeletion = append(queuesScheduledForDeletion, qName); 
+            continue;
+        } else {
+            // find players who were enqueued for more than 10 minutes 
+            q.Iterate(func(node *queue.List) {
+                enqueuedPlayer := node.Val.(*player.QueuedPlayer);
+                    
+                // if the player was queued BEFORE the time limit
+                if enqueuedPlayer.QueuedTimestamp < timeLimit {
+                    playersScheduledForEviction = append(playersScheduledForEviction, enqueuedPlayer);
+                }
+            });
+        }
+    }
+
+    // The actual deletion requires locking for it to not risk breaking anything.
+    // Reading could also be synchronized to ensure that we're not deleting unexistent
+    // entries, but no errors will be thrown if that happens, so we'll keep our 
+    // critical section small.
+    qp.mu.Lock();
+    defer qp.mu.Unlock();
+
+    for _, qName := range queuesScheduledForDeletion {
+        delete(qp.Queues, qName);
+    }
+
+    for _, enqueuedPlayer := range playersScheduledForEviction {
+        qp.Queues[enqueuedPlayer.QueuedOn].RemoveWithin(enqueuedPlayer);
+    }
 }
 

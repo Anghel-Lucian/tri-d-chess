@@ -2,8 +2,10 @@ package player
 
 type QueuedPlayer struct {
     PlayerId string;
-    Username string;
-    TimeQueued uint64;
+    //Username string; TODO: still deciding if we need this. The QueuedPlayer will
+    // be initialized only in the queue pool
+    QueuedTimestamp int64;
+    QueuedOn string;
 }
 
 func (player *QueuedPlayer) Equals(compared any) bool {

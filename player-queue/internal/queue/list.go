@@ -7,7 +7,7 @@ type ListVal interface {
 type List struct {
     next *List;
     prev *List;
-    val ListVal;
+    Val ListVal;
 }
 
 func (l *List) Insert(val ListVal) *List {
@@ -20,7 +20,7 @@ func (l *List) Insert(val ListVal) *List {
     node := &List{
         next: nil,
         prev: lPointer,
-        val: val,
+        Val: val,
     };
 
     lPointer.next = node;
@@ -50,7 +50,7 @@ func (l *List) Find(val ListVal) *List {
     for lPointer != nil {
         lPointer = lPointer.next;
 
-        if val.Equals(lPointer.val) {
+        if val.Equals(lPointer.Val) {
             return lPointer;
         }
     }
