@@ -58,6 +58,7 @@ func (q *Queue) RemoveWithin(val ListVal) ListVal {
     return node.Val;
 }
 
+// Will return the number of elements in this queue 
 func (q *Queue) Len() int {
     return q.items.Len();
 }

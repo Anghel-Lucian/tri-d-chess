@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-    "game-server/internal/env"
-    "game-server/internal/handlers"
+	"game-server/internal/env"
+	"game-server/internal/handlers"
 )
 
 // TODO: server sends updates even after the client is down, didn't test for more than 10 seconds to see what happens

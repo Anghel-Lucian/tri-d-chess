@@ -59,6 +59,7 @@ func SyncGetPlayerQueuePoolInstance(ctx context.Context) *PlayerQueuePool {
         }()
     }
 
+
     return qpInstance;
 }
 
@@ -80,9 +81,6 @@ func (qp *PlayerQueuePool) SyncCreateNewQueue(name string) error {
 }
 
 // TODO: need to ensure that a player can't be queued in two queues at the same time
-// TODO: need a polling function that will run on each queue and check if they have been
-// queued for a particularly long time, if yes, then evict them. I don't think you NEED it
-// but it would be interesting to implement. Also, not only players, but private queues as well
 
 // If this function returns two players it means that they were matched for a game.
 // If the queue they were matched in was not "Public", then it is deleted.
