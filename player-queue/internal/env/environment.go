@@ -2,28 +2,34 @@ package env
 
 import (
     "context"
+    "os"
 
-    "player-queue/internal/models"
+    "player-queue/internal/db"
+    "player-queue/internal/playerqueuepool"
 )
 
 type Env struct {
     DevelopmentRun bool;
-    DB models.DBClient;
-    CancelDBCtx func();
+    DB db.DBClient;
+    QueuePool *playerqueuepool.PlayerQueuePool;
+    CancelCtx func();
 }
 
 var LocalEnv Env = Env{};
 
 func InitEnv() error {
-    dbCtx, cancelDbCtx := context.WithCancel(context.Background());
-    LocalEnv.CancelDBCtx = cancelDbCtx;
-    LocalEnv.DB = &models.DB{};
-    // TODO: connect to DB initial error handling and retries
-    return LocalEnv.DB.InitDB(dbCtx, LoadVariable("DATABASE_URL"));
+    envCtx, cancelEnvCtx := context.WithCancel(context.Background());
+
+    LocalEnv.CancelCtx = cancelEnvCtx;
+    LocalEnv.DB = &db.DB{};
+    LocalEnv.DB.InitDB(envCtx, os.Getenv("DATABASE_URL"));
+    LocalEnv.QueuePool = playerqueuepool.SyncGetPlayerQueuePoolInstance(envCtx);
+
+    return nil;
 }
 
 func ReleaseEnv() {
-    LocalEnv.CancelDBCtx();
+    LocalEnv.CancelCtx();
     LocalEnv.DB.Release();
 }
 

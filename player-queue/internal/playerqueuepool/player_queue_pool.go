@@ -1,4 +1,4 @@
-package main
+package playerqueuepool
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+    "os"
 
-	"player-queue/internal/env"
 	"player-queue/internal/player"
 	"player-queue/internal/queue"
 )
@@ -16,8 +16,8 @@ import (
 var qpLock = sync.Mutex{};
 
 type PlayerQueuePool struct {
-    Queues map[string]*queue.Queue;
     mu sync.Mutex;
+    Queues map[string]*queue.Queue;
 }
 
 var qpInstance *PlayerQueuePool;
@@ -38,7 +38,7 @@ func SyncGetPlayerQueuePoolInstance(ctx context.Context) *PlayerQueuePool {
         };
 
         go func() {
-            evictionLimit, err := strconv.Atoi(env.LoadVariable("PLAYER_EVICTION_LIMIT"));
+            evictionLimit, err := strconv.Atoi(os.Getenv("PLAYER_EVICTION_LIMIT"));
 
             if err != nil {
                 log.Printf("[QueuePool:SyncGetPlayerQueuePoolInstance:Goroutine] Error converting PLAYER_EVICTION_LIMIT to integer: %v", err);
@@ -174,7 +174,7 @@ func (qp *PlayerQueuePool) SyncPollEvict() {
     var queuesScheduledForDeletion []string;
     var playersScheduledForEviction []*player.QueuedPlayer;
 
-    evictionLimit, err := strconv.Atoi(env.LoadVariable("PLAYER_EVICTION_LIMIT"));
+    evictionLimit, err := strconv.Atoi(envvar.LoadVariable("PLAYER_EVICTION_LIMIT"));
 
     if err != nil {
         log.Printf("[QueuePool:SyncPollEvict] Error converting PLAYER_EVICTION_LIMIT to integer: %v", err);

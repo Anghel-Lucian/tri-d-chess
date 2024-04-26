@@ -10,18 +10,36 @@ import (
 	"os/signal"
 	"syscall"
 
+    "github.com/joho/godotenv"
+
 	"player-queue/internal/env"
 	"player-queue/internal/handlers"
 )
 
 // TODO: server sends updates even after the client is down, didn't test for more than 10 seconds to see what happens
-// TODO: when receiving a request, how to identify what client to send an update to?
 func main() {
-    flag.BoolVar(&env.LocalEnv.DevelopmentRun, "dev", false, "Start the server in development mode");
+    var devRun *bool;
+
+    flag.BoolVar(devRun, "dev", false, "Start the server in development mode");
 
     flag.Parse();
 
-    serverPort := env.LoadVariable("PLAYER_QUEUE_PORT");
+    var fileName string;
+
+    if *devRun {
+        fileName = ".env.dev";
+    } else {
+        fileName = ".env";
+    }
+
+    err := godotenv.Load(fileName);
+
+    if err != nil {
+        log.Fatalf("[Game Server]: Loading .env file failed");
+        return;
+    }
+
+    serverPort := os.Getenv("PLAYER_QUEUE_PORT");
 
     server := &http.Server{
         Addr: serverPort,

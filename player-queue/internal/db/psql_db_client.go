@@ -1,11 +1,10 @@
-package models
+package db 
 
 import (
 	"context"
 	"log"
     "errors"
 
-	"github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
