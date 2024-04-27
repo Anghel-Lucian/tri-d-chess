@@ -11,6 +11,9 @@ import (
     "player-queue/internal/handlers/utils"
 )
 
+// TODO: this function can't return until two players have been matched. The
+// connection will be used to send an event saying that the queue has found a match for
+// the player
 func Enqueue(w http.ResponseWriter, r *http.Request) {
     queryParameters := r.URL.Query();
 
@@ -41,10 +44,18 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
         var responsePayload ResponsePayload;
 
         if playerExists {
-            qCtx, cancelQCtx := context.WithTimeout(context.Background(), time.Second * 1);
+            qCtx, cancelQCtx := context.WithCancel(context.Background());
             defer cancelQCtx();
 
-            // TODO:
+            // TODO: you can attach a channel to each queue, and listen on that channel
+            // for two elements. Source the queue from the pool before hand, based on the name.
+            // Then, call SyncEnqueue and check the error (if any error, respond).
+            // SyncEnqueue will push the player to the queue channel.
+            // If another player is also in that channel, then you'll send an event via
+            // the connection.
+            // IDK if player1, player2 := <-qCh, <-qCh is a valid select case, we'll see.
+            // If not, we can do a q channel that will hold pairs or players instead of
+            // individual players
             player1, player2, err := env.LocalEnv.QueuePool.SyncEnqueue(qCtx, "Public", playerId); 
 
             responsePayload = ResponsePayload{
