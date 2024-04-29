@@ -87,8 +87,8 @@ func (qp *PlayerQueuePool) SyncCreateNewQueue(name string) error {
 func (qp *PlayerQueuePool) SyncEnqueue(
     ctx context.Context, 
     queueName string, 
-    enqueuedPlayerId string,
-) (*player.QueuedPlayer, *player.QueuedPlayer, error) {
+    enqueuedPlayer *player.QueuedPlayer,
+) error {
     qp.mu.Lock();
     defer qp.mu.Unlock();
 
@@ -97,28 +97,22 @@ func (qp *PlayerQueuePool) SyncEnqueue(
     if !ok {
         message := "[QueuePool:SyncEnqueue] Queue does not exist: " + queueName; 
         log.Printf(message);
-        return nil, nil, errors.New(message);
+        return errors.New(message);
     }
 
-    enqueuedPlayer := &player.QueuedPlayer{
-        PlayerId: enqueuedPlayerId,
-        QueuedTimestamp: time.Now().Unix(),
-        QueuedOn: queueName,
-    };
-
-    if queue.Len() > 0 {
+    // queue.Len() adds the head to the count as well, which is a nil node
+    if queue.Len() > 1 {
         player2 := queue.Dequeue().(*player.QueuedPlayer);
 
-        if queueName != "Public" {
-            qp.DeleteQueue(ctx, queueName);
-        }
+        enqueuedPlayer.Matched <- struct{}{};
+        player2.Matched <- struct{}{};
 
-        return enqueuedPlayer, player2, nil; 
+        return nil; 
     }
 
     queue.Enqueue(enqueuedPlayer);
 
-    return nil, nil, nil;
+    return nil;
 }
 
 func (qp *PlayerQueuePool) DeleteQueue(ctx context.Context, queueName string) error {
@@ -174,7 +168,7 @@ func (qp *PlayerQueuePool) SyncPollEvict() {
     var queuesScheduledForDeletion []string;
     var playersScheduledForEviction []*player.QueuedPlayer;
 
-    evictionLimit, err := strconv.Atoi(envvar.LoadVariable("PLAYER_EVICTION_LIMIT"));
+    evictionLimit, err := strconv.Atoi(os.Getenv("PLAYER_EVICTION_LIMIT"));
 
     if err != nil {
         log.Printf("[QueuePool:SyncPollEvict] Error converting PLAYER_EVICTION_LIMIT to integer: %v", err);
