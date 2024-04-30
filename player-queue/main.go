@@ -10,10 +10,11 @@ import (
 	"os/signal"
 	"syscall"
 
-    "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 
 	"player-queue/internal/env"
 	"player-queue/internal/handlers"
+	"player-queue/internal/playerqueuepool"
 )
 
 // TODO: server sends updates even after the client is down, didn't test for more than 10 seconds to see what happens
@@ -45,13 +46,11 @@ func main() {
         Addr: serverPort,
     };
 
-    http.HandleFunc("/register-game", handlers.RegisterGame);
-    http.HandleFunc("/updates-subscribe", handlers.AuthCheckDecorator(handlers.UpdatesSubscribe));
-    http.HandleFunc("/move", handlers.AuthCheckDecorator(handlers.Move));
-    http.HandleFunc("/finish-game", handlers.FinishGame);
+    http.HandleFunc("/enqueue", handlers.AuthCheckDecorator(handlers.Enqueue));
 
     go func() {
         err := env.InitEnv();
+        playerqueuepool.SyncGetPlayerQueuePoolInstance(context.Background());
 
         if err != nil {
             log.Fatalf("Error when initializing environment: %v", err);

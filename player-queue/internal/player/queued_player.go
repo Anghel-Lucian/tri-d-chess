@@ -9,7 +9,7 @@ type QueuedPlayer struct {
     QueuedTimestamp int64;
     QueuedOn string;
 
-    Matched chan struct{};
+    Matched chan string;
     Writer *http.ResponseWriter;
 }
 

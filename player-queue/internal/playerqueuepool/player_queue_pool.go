@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"log"
+	"os"
 	"strconv"
 	"sync"
 	"time"
-    "os"
 
 	"player-queue/internal/player"
 	"player-queue/internal/queue"
+    "player-queue/internal/models"
 )
 
 var qpLock = sync.Mutex{};
@@ -59,7 +60,6 @@ func SyncGetPlayerQueuePoolInstance(ctx context.Context) *PlayerQueuePool {
         }()
     }
 
-
     return qpInstance;
 }
 
@@ -104,8 +104,20 @@ func (qp *PlayerQueuePool) SyncEnqueue(
     if queue.Len() > 1 {
         player2 := queue.Dequeue().(*player.QueuedPlayer);
 
-        enqueuedPlayer.Matched <- struct{}{};
-        player2.Matched <- struct{}{};
+        activeGame := &models.ActiveGame{
+            Player1: enqueuedPlayer.PlayerId,
+            Player2: player2.PlayerId,
+        };
+
+        _, err := activeGame.Store(ctx);
+
+        if err != nil {
+            log.Printf("[QueuePool:SyncEnqueue] Could not create active game: %v\n", err);
+            return err;
+        }
+
+        enqueuedPlayer.Matched <- activeGame.Id;
+        player2.Matched <- activeGame.Id;
 
         return nil; 
     }

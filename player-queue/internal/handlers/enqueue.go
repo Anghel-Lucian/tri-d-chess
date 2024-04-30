@@ -1,15 +1,16 @@
 package handlers
 
 import (
-    "net/http"
-    "context"
-    "encoding/json"
-    "log"
-    "time"
+	"context"
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
 
-    "player-queue/internal/env"
-    "player-queue/internal/player"
-    "player-queue/internal/handlers/utils"
+	"player-queue/internal/env"
+	"player-queue/internal/handlers/utils"
+	"player-queue/internal/player"
+	"player-queue/internal/playerqueuepool"
 )
 
 type matchedEvent struct {
@@ -72,11 +73,11 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
                 PlayerId: playerId,
                 QueuedTimestamp: time.Now().Unix(),
                 QueuedOn: "Public",
-                Matched: make(chan struct{}),
+                Matched: make(chan string),
                 Writer: &w,
             };
 
-            err := env.LocalEnv.QueuePool.SyncEnqueue(qCtx, "Public", enqueuedPlayer); 
+            err := playerqueuepool.SyncGetPlayerQueuePoolInstance(qCtx).SyncEnqueue(qCtx, "Public", enqueuedPlayer); 
 
             if err != nil {
                 log.Printf("[Enqueue] Error when enqueueing: %v", err);
@@ -84,7 +85,7 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
                 return;
             }
 
-            BlockingSendQueuedUpdate(enqueuedPlayer);
+            //blockingSendQueuedUpdate(enqueuedPlayer);
 
             responsePayload = ResponsePayload{
                 Message: "[Enqueue] Player enqueued successfully",
@@ -113,20 +114,6 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
 // TODO: you need to also create a game for the two queued players
 // think you can do that in the playerqueuepool when sending the update to both players maybe
 func blockingSendMatchedUpdate(enqueuedPlayer *player.QueuedPlayer) error {
-    event := AckEvent{
-        Ack: true,
-    };
-
-    json.NewEncoder(*w).Encode(event);
-    log.Printf("[Event] Sending ACK");
-    flusher, typeAssertionOk := (*w).(http.Flusher);
-
-    if !typeAssertionOk {
-        log.Printf("[Event] Error when asserting http.ResponseWriter to http.Flusher");
-        return errors.New("[Event] Error when doing type assertion");
-    }
-
-    flusher.Flush();
     return nil;
 }
 

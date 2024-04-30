@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"player-queue/internal/env"
@@ -13,7 +14,7 @@ import (
 // cookie attached to it
 func AuthCheckDecorator(h http.HandlerFunc) http.HandlerFunc {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        cookieName := env.LoadVariable("SESSION_COOKIE_LABEL");
+        cookieName := os.Getenv("SESSION_COOKIE_LABEL");
 
         cookie, err := r.Cookie(cookieName);
 

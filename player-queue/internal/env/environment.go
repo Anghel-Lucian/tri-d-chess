@@ -5,13 +5,11 @@ import (
     "os"
 
     "player-queue/internal/db"
-    "player-queue/internal/playerqueuepool"
 )
 
 type Env struct {
     DevelopmentRun bool;
     DB db.DBClient;
-    QueuePool *playerqueuepool.PlayerQueuePool;
     CancelCtx func();
 }
 
@@ -23,7 +21,6 @@ func InitEnv() error {
     LocalEnv.CancelCtx = cancelEnvCtx;
     LocalEnv.DB = &db.DB{};
     LocalEnv.DB.InitDB(envCtx, os.Getenv("DATABASE_URL"));
-    LocalEnv.QueuePool = playerqueuepool.SyncGetPlayerQueuePoolInstance(envCtx);
 
     return nil;
 }

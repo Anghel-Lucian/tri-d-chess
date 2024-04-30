@@ -143,25 +143,23 @@ func (db *DB) SessionExists(ctx context.Context, cookie string) (sessionExists b
     }
 }
 
-func (db *DB) CreateActiveGame(ctx context.Context, player1Id string, player2Id string) error {
-    commandTag, err := db.ConnectionPool.Exec(
+func (db *DB) CreateActiveGame(ctx context.Context, player1Id string, player2Id string) (string, error) {
+    row := db.ConnectionPool.QueryRow(
         ctx,
-        "INSERT INTO active_game (player1, player2) VALUES ($1, $2)",
+        "INSERT INTO active_game (player1, player2) VALUES ($1, $2) RETURNING uid",
         player1Id,
         player2Id,
     );
 
+    var gameId string;
+
+    err := row.Scan(&gameId);
+
     if err != nil {
-        log.Printf("[CreateActivGame] Error executing insert: %v", err);
-        return err;
+        log.Printf("[CreateActiveGame] Error executing insert: %v", err);
+        return "", err;
     }
 
-    if commandTag.RowsAffected() != 1 {
-        err := errors.New("No rows were affected by INSERT call. Bad INSERT");
-        log.Printf("[CreateActiveGame] Bad result after executing query: %v", err);
-        return err;
-    }
-
-    return nil;
+    return gameId, nil;
 }
 
