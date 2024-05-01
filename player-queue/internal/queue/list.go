@@ -74,9 +74,9 @@ func (l *List) Iterate(handler func(node *List)) {
     lPointer := l;
 
     for lPointer != nil {
-        lPointer = lPointer.next;
-
         handler(lPointer);
+
+        lPointer = lPointer.next;
     }
 }
 

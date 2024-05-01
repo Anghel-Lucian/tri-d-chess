@@ -19,15 +19,15 @@ import (
 
 // TODO: server sends updates even after the client is down, didn't test for more than 10 seconds to see what happens
 func main() {
-    var devRun *bool;
+    var devRun bool;
 
-    flag.BoolVar(devRun, "dev", false, "Start the server in development mode");
+    flag.BoolVar(&devRun, "dev", false, "Start the server in development mode");
 
     flag.Parse();
 
     var fileName string;
 
-    if *devRun {
+    if devRun {
         fileName = ".env.dev";
     } else {
         fileName = ".env";

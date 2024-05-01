@@ -3,15 +3,16 @@ package playerqueuepool
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"sync"
 	"time"
 
+	"player-queue/internal/models"
 	"player-queue/internal/player"
 	"player-queue/internal/queue"
-    "player-queue/internal/models"
 )
 
 var qpLock = sync.Mutex{};
@@ -23,9 +24,12 @@ type PlayerQueuePool struct {
 
 var qpInstance *PlayerQueuePool;
 
+// TODO: test eviction
+
 // Will return the Singleton instance of the PlayerQueuePool and also start
 // an eviction routine to run once every env.PLAYER_EVICTION_LIMIT seconds
 func SyncGetPlayerQueuePoolInstance(ctx context.Context) *PlayerQueuePool {
+    fmt.Printf("get player queue called: %v\n", qpInstance);
     if qpInstance == nil {
         qpLock.Lock();
         defer qpLock.Unlock();
@@ -196,11 +200,11 @@ func (qp *PlayerQueuePool) SyncPollEvict() {
         if q.Len() == 0 && qName != "Public" {
             queuesScheduledForDeletion = append(queuesScheduledForDeletion, qName); 
             continue;
-        } else {
+        } else if q.Len() > 1 {
             // find players who were enqueued for more than 10 minutes 
             q.Iterate(func(node *queue.List) {
                 enqueuedPlayer := node.Val.(*player.QueuedPlayer);
-                    
+
                 // if the player was queued BEFORE the time limit
                 if enqueuedPlayer.QueuedTimestamp < timeLimit {
                     playersScheduledForEviction = append(playersScheduledForEviction, enqueuedPlayer);
