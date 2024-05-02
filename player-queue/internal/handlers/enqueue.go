@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -14,11 +15,10 @@ import (
 )
 
 type matchedEvent struct {
-    Player1Id string `json:"player1Id"`
-    Player2Id string `json:"player2Id"`
     GameId string `json:"gameId"`
 }
 
+// FIX: the first player that is enqueued doesn't  keep the connection alive
 // TODO: this function can't return until two players have been matched. The
 // connection will be used to send an event saying that the queue has found a match for
 // the player
@@ -73,7 +73,7 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
                 PlayerId: playerId,
                 QueuedTimestamp: time.Now().Unix(),
                 QueuedOn: "Public",
-                Matched: make(chan string),
+                Matched: make(chan string, 1),
                 Writer: &w,
             };
 
@@ -85,12 +85,13 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
                 return;
             }
 
-            //blockingSendQueuedUpdate(enqueuedPlayer);
+            event := blockingSendMatchedUpdate(enqueuedPlayer);
 
-            responsePayload = ResponsePayload{
-                Message: "[Enqueue] Player enqueued successfully",
-            };
-            w.WriteHeader(http.StatusOK);
+            json.NewEncoder(w).Encode(event);
+            flusher, _ := w.(http.Flusher);
+
+            flusher.Flush();
+            return;
         } else {
             responsePayload = ResponsePayload{
                 Message: "[Enqueue] Player not found",
@@ -113,7 +114,13 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
 
 // TODO: you need to also create a game for the two queued players
 // think you can do that in the playerqueuepool when sending the update to both players maybe
-func blockingSendMatchedUpdate(enqueuedPlayer *player.QueuedPlayer) error {
-    return nil;
+func blockingSendMatchedUpdate(enqueuedPlayer *player.QueuedPlayer) matchedEvent {
+    gameId := <-enqueuedPlayer.Matched; 
+
+    responsePayload := matchedEvent{
+        GameId: gameId,
+    };
+
+    return responsePayload;
 }
 

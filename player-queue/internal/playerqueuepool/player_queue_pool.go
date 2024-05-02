@@ -3,7 +3,6 @@ package playerqueuepool
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -29,7 +28,6 @@ var qpInstance *PlayerQueuePool;
 // Will return the Singleton instance of the PlayerQueuePool and also start
 // an eviction routine to run once every env.PLAYER_EVICTION_LIMIT seconds
 func SyncGetPlayerQueuePoolInstance(ctx context.Context) *PlayerQueuePool {
-    fmt.Printf("get player queue called: %v\n", qpInstance);
     if qpInstance == nil {
         qpLock.Lock();
         defer qpLock.Unlock();
@@ -106,6 +104,7 @@ func (qp *PlayerQueuePool) SyncEnqueue(
 
     // queue.Len() adds the head to the count as well, which is a nil node
     if queue.Len() > 1 {
+
         player2 := queue.Dequeue().(*player.QueuedPlayer);
 
         activeGame := &models.ActiveGame{
