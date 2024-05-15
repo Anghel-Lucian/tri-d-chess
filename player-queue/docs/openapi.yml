@@ -47,6 +47,11 @@ paths:
           schema:
             type: string
           description: Password for the queue
+        - in: query
+          name: playerId
+          schema:
+            type: string
+          description: ID of the player that creates or wishes to enter the private queue
       responses:
         '200':
           description: Enqueued successfully

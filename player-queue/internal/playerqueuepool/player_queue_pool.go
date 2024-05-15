@@ -23,8 +23,6 @@ type PlayerQueuePool struct {
 
 var qpInstance *PlayerQueuePool;
 
-// TODO: test eviction
-
 // Will return the Singleton instance of the PlayerQueuePool and also start
 // an eviction routine to run once every env.PLAYER_EVICTION_LIMIT seconds
 func SyncGetPlayerQueuePoolInstance(ctx context.Context) *PlayerQueuePool {
@@ -94,18 +92,16 @@ func (qp *PlayerQueuePool) SyncEnqueue(
     qp.mu.Lock();
     defer qp.mu.Unlock();
 
-    queue, ok := qp.Queues[queueName];
+    q, ok := qp.Queues[queueName];
 
     if !ok {
-        message := "[QueuePool:SyncEnqueue] Queue does not exist: " + queueName; 
-        log.Printf(message);
-        return errors.New(message);
+        q = queue.NewQueue(queueName)
+        qp.Queues[queueName] = q;
     }
 
     // queue.Len() adds the head to the count as well, which is a nil node
-    if queue.Len() > 1 {
-
-        player2 := queue.Dequeue().(*player.QueuedPlayer);
+    if q.Len() > 1 {
+        player2 := q.Dequeue().(*player.QueuedPlayer);
 
         activeGame := &models.ActiveGame{
             Player1: enqueuedPlayer.PlayerId,
@@ -119,13 +115,13 @@ func (qp *PlayerQueuePool) SyncEnqueue(
             return err;
         }
 
-        enqueuedPlayer.Matched <- activeGame.Id;
         player2.Matched <- activeGame.Id;
+        enqueuedPlayer.Matched <- activeGame.Id;
 
         return nil; 
     }
 
-    queue.Enqueue(enqueuedPlayer);
+    q.Enqueue(enqueuedPlayer);
 
     return nil;
 }

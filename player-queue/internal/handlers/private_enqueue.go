@@ -13,14 +13,17 @@ import (
 	"player-queue/internal/playerqueuepool"
 )
 
-type matchedEvent struct {
-    GameId string `json:"gameId"`
-}
-
-func Enqueue(w http.ResponseWriter, r *http.Request) {
+func PrivateEnqueue(w http.ResponseWriter, r *http.Request) {
     queryParameters := r.URL.Query();
 
-    playerId := queryParameters.Get("playerId");
+    password := queryParameters.Get("password");
+
+    if len(password) == 0 {
+        BadRequest(&w, r, "[Enqueue] password is a required parameter", 0);
+        return;
+    }
+
+    playerId := queryParameters.Get("playerId")
 
     if len(playerId) == 0 {
         BadRequest(&w, r, "[Enqueue] playerId is a required parameter", 0);
@@ -53,12 +56,12 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
             enqueuedPlayer := &player.QueuedPlayer{
                 PlayerId: playerId,
                 QueuedTimestamp: time.Now().Unix(),
-                QueuedOn: "Public",
+                QueuedOn: password,
                 Matched: make(chan string, 1),
                 Writer: &w,
             };
 
-            err := playerqueuepool.SyncGetPlayerQueuePoolInstance(qCtx).SyncEnqueue(qCtx, "Public", enqueuedPlayer); 
+            err := playerqueuepool.SyncGetPlayerQueuePoolInstance(qCtx).SyncEnqueue(qCtx, password, enqueuedPlayer); 
 
             if err != nil {
                 log.Printf("[Enqueue] Error when enqueueing: %v", err);
@@ -91,15 +94,5 @@ func Enqueue(w http.ResponseWriter, r *http.Request) {
         BadRequest(&w, r, "[Enqueue] Request timeout", http.StatusRequestTimeout);
         return;
     }
-}
-
-func blockingSendMatchedUpdate(enqueuedPlayer *player.QueuedPlayer) matchedEvent {
-    gameId := <-enqueuedPlayer.Matched; 
-
-    responsePayload := matchedEvent{
-        GameId: gameId,
-    };
-
-    return responsePayload;
 }
 

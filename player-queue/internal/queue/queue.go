@@ -6,8 +6,9 @@ import (
 
 type Queue struct {
     Name string;
-    items *List;
+
     mu sync.Mutex;
+    items *List;
 }
 
 func NewQueue(name string) *Queue {

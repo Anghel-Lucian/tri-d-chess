@@ -17,7 +17,6 @@ import (
 	"player-queue/internal/playerqueuepool"
 )
 
-// TODO: server sends updates even after the client is down, didn't test for more than 10 seconds to see what happens
 func main() {
     var devRun bool;
 
@@ -47,6 +46,7 @@ func main() {
     };
 
     http.HandleFunc("/enqueue", handlers.AuthCheckDecorator(handlers.Enqueue));
+    http.HandleFunc("/private-enqueue", handlers.AuthCheckDecorator(handlers.PrivateEnqueue))
 
     go func() {
         err := env.InitEnv();
