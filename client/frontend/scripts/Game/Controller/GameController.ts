@@ -8,6 +8,7 @@ import {
     AttackBoardType,
     FULL_BOARD_DIMENSION,
     FullBoardType,
+    getPieceMapAlivePieces,
     getPieceMapDeadPieces
 } from "../common";
 
@@ -47,6 +48,8 @@ export default class GameController {
 
         this.data.deadWhitePieces = getPieceMapDeadPieces(whitePieces);
         this.data.deadBlackPieces = getPieceMapDeadPieces(blackPieces);
+        this.data.aliveWhitePieces = getPieceMapAlivePieces(whitePieces);
+        this.data.aliveBlackPieces = getPieceMapAlivePieces(blackPieces);
 
         this.formatFullBoard(fullBoardTop);
         this.formatFullBoard(fullBoardMiddle);

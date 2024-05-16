@@ -1,4 +1,4 @@
-import { FullBoardType } from "../common";
+import { FullBoardType, PieceName } from "../common";
 
 export const CAMERA_FOV = 50;
 export const CAMERA_ASPECT = 2; 
@@ -26,3 +26,31 @@ export const FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP = {
     [FullBoardType.Middle]: 2 * CELL_WIDTH,// TODO: should be calculated based on the cell dimensions
     [FullBoardType.Bottom]: 0
 };
+
+export const PIECE_RENDERED_MODEL = {
+    [PieceName.King]: {
+        mtl: "King",
+        obj: "King",
+    },
+    [PieceName.Pawn]: {
+        mtl: "Pawn",
+        obj: "Pawn",
+    },
+    [PieceName.Rook]: {
+        mtl: "Rook",
+        obj: "Rook",
+    },
+    [PieceName.Queen]: {
+        mtl: "Queen",
+        obj: "Queen",
+    },
+    [PieceName.Bishop]: {
+        mtl: "Bishop",
+        obj: "Bishop",
+    },
+    [PieceName.Knight]: {
+        mtl: "Knight",
+        obj: "Knight",
+    }
+};
+

@@ -1,4 +1,4 @@
-import { AttackBoardType, FullBoardType, PlayerColor } from "../common"
+import { AttackBoardType, FullBoardType, PlayerColor, Piece } from "../common"
 
 export interface ViewCell {
     x: number,
@@ -38,14 +38,10 @@ export interface ViewData {
         username: string,
         color: PlayerColor 
     },
-    deadWhitePieces: {
-        name: string,
-        color: PlayerColor
-    }[],
-    deadBlackPieces: {
-        name: string,
-        color: PlayerColor
-    }[],
+    deadWhitePieces: Piece[],
+    deadBlackPieces: Piece[],
+    aliveWhitePieces: Piece[],
+    aliveBlackPieces: Piece[],
     fullBoardTop: ViewFullBoard, 
     fullBoardMiddle: ViewFullBoard,
     fullBoardBottom: ViewFullBoard 
