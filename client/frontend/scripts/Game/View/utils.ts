@@ -1,10 +1,10 @@
-import { AttackBoardType, FullBoardType, PlayerColor, Piece } from "../common"
+import { AttackBoardType, FullBoardType, PlayerColor, Piece, PieceName } from "../common"
 
 export interface ViewCell {
     x: number,
     y: number,
     piece: {
-        name: string,
+        name: PieceName,
         color: PlayerColor
     },
     boardType: FullBoardType | AttackBoardType,

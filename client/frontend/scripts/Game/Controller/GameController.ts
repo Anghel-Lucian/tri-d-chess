@@ -29,6 +29,7 @@ export default class GameController {
 
     private formatViewData(): GameController {
         const {fullBoardTop, fullBoardMiddle, fullBoardBottom}: SerializedBoards = this.game.getSerializedBoards(); 
+        console.log({fullBoardBottom});
         const {playerOne, playerTwo} = this.game.getPlayers();
         const whitePieces = this.game.getWhitePieces();
         const blackPieces = this.game.getBlackPieces();

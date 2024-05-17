@@ -19,9 +19,10 @@ import {
     CELL_HEIGHT,
     CELL_WIDTH,
     FULL_BOARD_TYPE_Y_COORDINATE_MAP,
-    FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP
+    FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP,
+    PIECE_RENDERED_MODEL
 } from './constants';
-import { PlayerColor } from '../common';
+import { PlayerColor, PieceName, FULL_BOARD_DIMENSION } from '../common';
 
 const cellGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH);
 const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({color: 0xfcfafa}); 
@@ -34,6 +35,8 @@ export default class GameView {
     private scene: THREE.Scene;
     private controls: OrbitControls;
     private mainLight: THREE.Light;
+    private mtlLoader: MTLLoader;
+    private objLoader: OBJLoader;
     private static instance: GameView;
 
     private constructor(canvas: HTMLElement) {
@@ -53,21 +56,9 @@ export default class GameView {
 
         this.scene = new THREE.Scene();
 
-        const mtlLoader = new MTLLoader();
-        const objLoader = new OBJLoader();
+        this.mtlLoader = new MTLLoader();
+        this.objLoader = new OBJLoader();
 
-        const scene = this.scene;
-
-        mtlLoader.load("assets/chess-pieces/Bishop.mtl", (materials) => {
-            materials.preload();
-            
-            objLoader.setMaterials(materials);
-            objLoader.load("assets/chess-pieces/Bishop.obj", (object) => {
-                object.scale.setScalar(0.03);
-                object.rotateX(3.14 * 1.5);
-                scene.add(object);
-            });
-        });
         this.scene.add(this.mainLight);
     }
 
@@ -135,15 +126,58 @@ export default class GameView {
             const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
             const cell = new THREE.Mesh(cellGeometry, material);
 
-            cell.translateY(FULL_BOARD_TYPE_Y_COORDINATE_MAP[board.type]);
-            cell.translateX((cellData.x + 1) * CELL_WIDTH);
+            const cellY = FULL_BOARD_TYPE_Y_COORDINATE_MAP[board.type];
+            const cellX = (cellData.x + 1) * CELL_WIDTH;
             // Unfortunate naming I believe, because the Y on cellData refers to the board which is a 2D plane
-            cell.translateZ((cellData.y + 1) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]);
+            const cellZ = (cellData.y + 1) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
+
+            cell.translateY(cellY);
+            cell.translateX(cellX);
+            cell.translateZ(cellZ);
 
             console.log(cellData.piece);
 
+            if (cellData.piece) {
+                this.renderPiece(
+                    cellData.piece.name,
+                    -cellX, 
+                    -cellZ, 
+                    cellY + CELL_HEIGHT / 2,
+                    cell
+                );
+            }
+
             this.scene.add(cell);
         }
+    }
+
+    private renderPiece(
+        pieceName: PieceName,
+        cellY: number,
+        cellX: number,
+        cellZ: number,
+        cellObject: THREE.Object3D
+    ) { 
+        console.log("rendering piece", pieceName);
+        const {mtl, obj} = PIECE_RENDERED_MODEL[pieceName];
+        const scene = this.scene;
+
+        this.mtlLoader.load(`assets/chess-pieces/${mtl}.mtl`, (materials) => {
+            materials.preload();
+            
+            this.objLoader.setMaterials(materials);
+            this.objLoader.load(`assets/chess-pieces/${obj}.obj`, (object) => {
+                object.scale.setScalar(0.03);
+                object.rotateX(3.14 * 1.5);
+                object.position.setFromMatrixPosition(cellObject.matrixWorld);
+                object.translateZ(0.5);
+                /*
+                object.translateY(cellY);
+                object.translateX(cellX);
+                */
+                scene.add(object);
+            });
+        });
     }
 
     private resizeRendererToDisplaySize(renderer: THREE.Renderer) {
