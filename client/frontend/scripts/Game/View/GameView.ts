@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 
-import { ThreeDCoordinates, ViewData, ViewFullBoard } from "./utils";
+import { ThreeDCoordinates, ViewData, ViewFullBoard, ViewPiece } from "./utils";
 import { 
     CAMERA_ASPECT,
     CAMERA_FAR,
@@ -109,7 +109,6 @@ export default class GameView {
 
     /**
       * Render cells of a full board starting at the bottom-right cell
-      * TODO: ensure that the cells are ordered first, in order of their coordinates (first 0,0; 0,1 ... 3,3)
       */
     private renderFullBoard(board: ViewFullBoard) {
         let cellColor: PlayerColor = PlayerColor.White;
@@ -127,39 +126,23 @@ export default class GameView {
             const cell = new THREE.Mesh(cellGeometry, material);
 
             const cellY = FULL_BOARD_TYPE_Y_COORDINATE_MAP[board.type];
-            const cellX = (cellData.x + 1) * CELL_WIDTH;
-            // Unfortunate naming I believe, because the Y on cellData refers to the board which is a 2D plane
-            const cellZ = (cellData.y + 1) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
+            const cellX = (cellData.y + 1) * CELL_WIDTH;
+            const cellZ = (cellData.x + 1) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
 
             cell.translateY(cellY);
             cell.translateX(cellX);
             cell.translateZ(cellZ);
 
-            console.log(cellData.piece);
-
             if (cellData.piece) {
-                this.renderPiece(
-                    cellData.piece.name,
-                    -cellX, 
-                    -cellZ, 
-                    cellY + CELL_HEIGHT / 2,
-                    cell
-                );
+                this.renderPiece(cellData.piece, cell);
             }
 
             this.scene.add(cell);
         }
     }
 
-    private renderPiece(
-        pieceName: PieceName,
-        cellY: number,
-        cellX: number,
-        cellZ: number,
-        cellObject: THREE.Object3D
-    ) { 
-        console.log("rendering piece", pieceName);
-        const {mtl, obj} = PIECE_RENDERED_MODEL[pieceName];
+    private renderPiece(piece: ViewPiece, cellObject: THREE.Object3D) { 
+        const {mtl, obj} = PIECE_RENDERED_MODEL[piece.name];
         const scene = this.scene;
 
         this.mtlLoader.load(`assets/chess-pieces/${mtl}.mtl`, (materials) => {
@@ -169,12 +152,13 @@ export default class GameView {
             this.objLoader.load(`assets/chess-pieces/${obj}.obj`, (object) => {
                 object.scale.setScalar(0.03);
                 object.rotateX(3.14 * 1.5);
+
+                if (piece.color === PlayerColor.White) {
+                    object.rotateZ(3.14 * 1);
+                }
+
                 object.position.setFromMatrixPosition(cellObject.matrixWorld);
                 object.translateZ(0.5);
-                /*
-                object.translateY(cellY);
-                object.translateX(cellX);
-                */
                 scene.add(object);
             });
         });

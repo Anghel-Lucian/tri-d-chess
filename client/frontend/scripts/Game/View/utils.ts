@@ -1,12 +1,14 @@
 import { AttackBoardType, FullBoardType, PlayerColor, Piece, PieceName } from "../common"
 
+export interface ViewPiece {
+    name: PieceName,
+    color: PlayerColor
+}
+
 export interface ViewCell {
     x: number,
     y: number,
-    piece: {
-        name: PieceName,
-        color: PlayerColor
-    },
+    piece: ViewPiece,
     boardType: FullBoardType | AttackBoardType,
     hostedAttackBoard: {
         type: AttackBoardType,
