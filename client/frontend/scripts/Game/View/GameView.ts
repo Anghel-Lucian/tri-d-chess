@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 
-import { ThreeDCoordinates, ViewData, ViewFullBoard, ViewPiece } from "./utils";
+import { ThreeDCoordinates, ViewAttackBoard, ViewData, ViewFullBoard, ViewPiece } from "./utils";
 import { 
     CAMERA_ASPECT,
     CAMERA_FAR,
@@ -100,11 +100,11 @@ export default class GameView {
 
     private renderFullBoards(data: ViewData) {
         this.renderFullBoard(data.fullBoardTop);
-        // TODO: attack boards as well per full board
+        this.renderFullBoardAttackBoards(data.fullBoardTop);
         this.renderFullBoard(data.fullBoardMiddle);
-        // TODO: attack boards as well per full board
+        this.renderFullBoardAttackBoards(data.fullBoardMiddle);
         this.renderFullBoard(data.fullBoardBottom);
-        // TODO: attack boards as well per full board
+        this.renderFullBoardAttackBoards(data.fullBoardBottom);
     }
 
     /**
@@ -140,6 +140,40 @@ export default class GameView {
             this.scene.add(cell);
         }
     }
+
+    private renderFullBoardAttackBoards(fullBoard: ViewFullBoard) {
+        let cellColor: PlayerColor = PlayerColor.White;
+
+        for (const board of fullBoard.attackBoards) {
+            for (const cellData of board.cells) {
+                if ((cellData.x + 1) % 2 === 0 && cellData.y === 0) {
+                    cellColor = PlayerColor.White;
+                } else if ((cellData.x + 1) % 2 !== 0 && cellData.y === 0) {
+                    cellColor = PlayerColor.Black;
+                } else {
+                    cellColor = cellColor === PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
+                }
+
+                const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
+                const cell = new THREE.Mesh(cellGeometry, material);
+
+                const cellY = FULL_BOARD_TYPE_Y_COORDINATE_MAP[fullBoard.type] + 4;
+                const cellX = (cellData.y + 1) * CELL_WIDTH;
+                const cellZ = (cellData.x + 1) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
+
+                cell.translateY(cellY);
+                cell.translateX(cellX);
+                cell.translateZ(cellZ);
+
+                if (cellData.piece) {
+                    this.renderPiece(cellData.piece, cell);
+                }
+
+                this.scene.add(cell);
+            }
+        }
+    }
+
 
     private renderPiece(piece: ViewPiece, cellObject: THREE.Object3D) { 
         const {mtl, obj} = PIECE_RENDERED_MODEL[piece.name];
