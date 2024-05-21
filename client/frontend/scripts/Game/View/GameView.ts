@@ -22,7 +22,7 @@ import {
     FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP,
     PIECE_RENDERED_MODEL
 } from './constants';
-import { PlayerColor, PieceName, FULL_BOARD_DIMENSION } from '../common';
+import { PlayerColor, PieceName, FULL_BOARD_DIMENSION, AttackBoardType } from '../common';
 
 const cellGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH);
 const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({color: 0xfcfafa}); 
@@ -141,35 +141,65 @@ export default class GameView {
         }
     }
 
+    // TODO: create map of offsets for accommodating all 12 positions of the attack boards
     private renderFullBoardAttackBoards(fullBoard: ViewFullBoard) {
         let cellColor: PlayerColor = PlayerColor.White;
 
         for (const board of fullBoard.attackBoards) {
-            for (const cellData of board.cells) {
-                if ((cellData.x + 1) % 2 === 0 && cellData.y === 0) {
-                    cellColor = PlayerColor.White;
-                } else if ((cellData.x + 1) % 2 !== 0 && cellData.y === 0) {
-                    cellColor = PlayerColor.Black;
-                } else {
-                    cellColor = cellColor === PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
+            if (board.type === AttackBoardType.Left) {
+                for (const cellData of board.cells) {
+                    if ((cellData.x + 1) % 2 === 0 && cellData.y === 0) {
+                        cellColor = PlayerColor.White;
+                    } else if ((cellData.x + 1) % 2 !== 0 && cellData.y === 0) {
+                        cellColor = PlayerColor.Black;
+                    } else {
+                        cellColor = cellColor === PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
+                    }
+
+                    const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
+                    const cell = new THREE.Mesh(cellGeometry, material);
+
+                    const cellY = FULL_BOARD_TYPE_Y_COORDINATE_MAP[fullBoard.type] + 4;
+                    const cellX = (cellData.y) * CELL_WIDTH;
+                    const cellZ = (cellData.x - 4) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
+
+                    cell.translateY(cellY);
+                    cell.translateX(cellX);
+                    cell.translateZ(cellZ);
+
+                    if (cellData.piece) {
+                        this.renderPiece(cellData.piece, cell);
+                    }
+
+                    this.scene.add(cell);
                 }
+            } else {
+                for (const cellData of board.cells) {
+                    if ((cellData.x + 1) % 2 === 0 && cellData.y === 0) {
+                        cellColor = PlayerColor.White;
+                    } else if ((cellData.x + 1) % 2 !== 0 && cellData.y === 0) {
+                        cellColor = PlayerColor.Black;
+                    } else {
+                        cellColor = cellColor === PlayerColor.White ? PlayerColor.Black : PlayerColor.White;
+                    }
 
-                const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
-                const cell = new THREE.Mesh(cellGeometry, material);
+                    const material = cellColor === PlayerColor.White ? cellMaterialWhite : cellMaterialBlack;
+                    const cell = new THREE.Mesh(cellGeometry, material);
 
-                const cellY = FULL_BOARD_TYPE_Y_COORDINATE_MAP[fullBoard.type] + 4;
-                const cellX = (cellData.y + 1) * CELL_WIDTH;
-                const cellZ = (cellData.x + 1) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
+                    const cellY = FULL_BOARD_TYPE_Y_COORDINATE_MAP[fullBoard.type] + 4;
+                    const cellX = (cellData.y + 4) * CELL_WIDTH;
+                    const cellZ = (cellData.x - 2) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
 
-                cell.translateY(cellY);
-                cell.translateX(cellX);
-                cell.translateZ(cellZ);
+                    cell.translateY(cellY);
+                    cell.translateX(cellX);
+                    cell.translateZ(cellZ);
 
-                if (cellData.piece) {
-                    this.renderPiece(cellData.piece, cell);
+                    if (cellData.piece) {
+                        this.renderPiece(cellData.piece, cell);
+                    }
+
+                    this.scene.add(cell);
                 }
-
-                this.scene.add(cell);
             }
         }
     }

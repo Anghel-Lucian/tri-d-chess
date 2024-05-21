@@ -13,8 +13,8 @@ export const CELL_HEIGHT = 1;
  * one on the fullboard and one on the potential attack board
  */
 export const FULL_BOARD_TYPE_Y_COORDINATE_MAP = {
-    [FullBoardType.Top]: 8,
-    [FullBoardType.Middle]: 4,
+    [FullBoardType.Top]: 18,
+    [FullBoardType.Middle]: 9,
     [FullBoardType.Bottom]: 0
 };
 
