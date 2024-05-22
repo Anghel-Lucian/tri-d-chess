@@ -22,11 +22,62 @@ import {
     FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP,
     PIECE_RENDERED_MODEL
 } from './constants';
-import { PlayerColor, PieceName, FULL_BOARD_DIMENSION, AttackBoardType } from '../common';
+import { PlayerColor, PieceName, FULL_BOARD_DIMENSION, AttackBoardType, FullBoardType } from '../common';
 
 const cellGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH);
 const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({color: 0xfcfafa}); 
 const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({color: 0xe64578}); 
+const attackBoardsCoordinatesOffset = {
+    bottomBottomRight: {
+        x: 4,
+        z: -2,
+    },
+    bottomBottomLeft: {
+        x: 0,
+        z: -4
+    },
+    bottomTopRight: {
+        x: 4,
+        z: 2,
+    },
+    bottomTopLeft: {
+        x: 0,
+        z: 0,
+    },
+    // TODO: replace the following 4 coordinate sets with correct values
+    middleBottomRight: {
+        x: 0,
+        z: 2,
+    },
+    middleBottomLeft: {
+        x: 4,
+        z: 4,
+    },
+    middleTopRight: {
+        x: 10,
+        z: 10,
+    },
+    middleTopLeft: {
+        x: 10,
+        z: 10,
+    },
+    topBottomRight: {
+        x: 4,
+        z: 6,
+    },
+    topBottomLeft: {
+        x: 0,
+        z: 4,
+    },
+    topTopRight: {
+        x: 4,
+        z: 4,
+    },
+    topTopLeft: {
+        x: 0,
+        z: 8,
+    }
+};
 
 export default class GameView {
     private canvas: HTMLElement;
@@ -141,12 +192,21 @@ export default class GameView {
         }
     }
 
-    // TODO: create map of offsets for accommodating all 12 positions of the attack boards
     private renderFullBoardAttackBoards(fullBoard: ViewFullBoard) {
         let cellColor: PlayerColor = PlayerColor.White;
 
         for (const board of fullBoard.attackBoards) {
             if (board.type === AttackBoardType.Left) {
+                let coordinatesOffset;
+
+                if (fullBoard.type === FullBoardType.Bottom) {
+                    coordinatesOffset = attackBoardsCoordinatesOffset.bottomBottomLeft;
+                } else if (fullBoard.type === FullBoardType.Middle) {
+                    coordinatesOffset = attackBoardsCoordinatesOffset.middleBottomLeft;
+                } else if (fullBoard.type === FullBoardType.Top) {
+                    coordinatesOffset = attackBoardsCoordinatesOffset.topBottomLeft;
+                }
+
                 for (const cellData of board.cells) {
                     if ((cellData.x + 1) % 2 === 0 && cellData.y === 0) {
                         cellColor = PlayerColor.White;
@@ -160,8 +220,8 @@ export default class GameView {
                     const cell = new THREE.Mesh(cellGeometry, material);
 
                     const cellY = FULL_BOARD_TYPE_Y_COORDINATE_MAP[fullBoard.type] + 4;
-                    const cellX = (cellData.y) * CELL_WIDTH;
-                    const cellZ = (cellData.x - 4) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
+                    const cellX = (cellData.y + coordinatesOffset.x) * CELL_WIDTH;
+                    const cellZ = (cellData.x + coordinatesOffset.z) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
 
                     cell.translateY(cellY);
                     cell.translateX(cellX);
@@ -174,6 +234,16 @@ export default class GameView {
                     this.scene.add(cell);
                 }
             } else {
+                let coordinatesOffset;
+
+                if (fullBoard.type === FullBoardType.Bottom) {
+                    coordinatesOffset = attackBoardsCoordinatesOffset.bottomBottomRight;
+                } else if (fullBoard.type === FullBoardType.Middle) {
+                    coordinatesOffset = attackBoardsCoordinatesOffset.middleBottomRight;
+                } else if (fullBoard.type === FullBoardType.Top) {
+                    coordinatesOffset = attackBoardsCoordinatesOffset.topBottomRight;
+                }
+
                 for (const cellData of board.cells) {
                     if ((cellData.x + 1) % 2 === 0 && cellData.y === 0) {
                         cellColor = PlayerColor.White;
@@ -187,8 +257,8 @@ export default class GameView {
                     const cell = new THREE.Mesh(cellGeometry, material);
 
                     const cellY = FULL_BOARD_TYPE_Y_COORDINATE_MAP[fullBoard.type] + 4;
-                    const cellX = (cellData.y + 4) * CELL_WIDTH;
-                    const cellZ = (cellData.x - 2) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
+                    const cellX = (cellData.y + coordinatesOffset.x) * CELL_WIDTH;
+                    const cellZ = (cellData.x + coordinatesOffset.z) * CELL_WIDTH + FULL_BOARD_TYPE_Z_COORDINATE_OFFSET_MAP[board.type]
 
                     cell.translateY(cellY);
                     cell.translateX(cellX);

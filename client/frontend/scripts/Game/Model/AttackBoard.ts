@@ -31,23 +31,6 @@ export default class AttackBoard {
             for (let column: number = 0; column < ATTACK_BOARD_DIMENSION; column++) { 
                 if (this.type === AttackBoardType.Left) {
                     if (this.color === PlayerColor.White) {
-                        if (row === 0 && column === 0) {
-                            const piece = pieces.Rook0;
-
-                            this.pieces.Rook0 = piece;
-                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
-                        } else if (row === 0 && column === 1) {
-                            const piece = pieces.King;
-
-                            this.pieces.King = piece;
-                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
-                        } else if (row === 1) {
-                            const piece = pieces[`Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET}` as keyof PieceMap];
-
-                            this.pieces[`Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET}` as keyof PieceMap] = piece;
-                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
-                        }
-                    } else {
                         if (row === 1 && column === 0) {
                             const piece = pieces.Rook0;
 
@@ -59,6 +42,23 @@ export default class AttackBoard {
                             this.pieces.King = piece;
                             this.cells[row][column] = new Cell(row, column, this.type, piece); 
                         } else if (row === 0) {
+                            const piece = pieces[`Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET}` as keyof PieceMap];
+
+                            this.pieces[`Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET}` as keyof PieceMap] = piece;
+                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                        }
+                    } else {
+                        if (row === 0 && column === 0) {
+                            const piece = pieces.Rook0;
+
+                            this.pieces.Rook0 = piece;
+                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                        } else if (row === 0 && column === 1) {
+                            const piece = pieces.King;
+
+                            this.pieces.King = piece;
+                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                        } else if (row === 1) {
                             const piece = pieces[`Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET}` as keyof PieceMap];
 
                             this.pieces[`Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET}` as keyof PieceMap] = piece;
@@ -69,24 +69,6 @@ export default class AttackBoard {
 
                 if (this.type === AttackBoardType.Right) {
                     if (this.color === PlayerColor.White) {
-                        if (row === 0 && column === 0) {
-                            const piece = pieces.Queen;
-
-                            this.pieces.Queen = piece;
-                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
-                        } else if (row === 0 && column === 1) {
-                            const piece = pieces.Rook1;
-
-                            this.pieces.Rook1 = piece;
-                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
-                        } else if (row === 1) {
-                            const pieceKey = `Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET + ATTACK_BOARD_RIGHT_PAWN_INDEX_OFFSET}`;
-                            const piece = pieces[pieceKey as keyof PieceMap];
-
-                            this.pieces[pieceKey as keyof PieceMap] = piece;
-                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
-                        }
-                    } else {
                         if (row === 1 && column === 0) {
                             const piece = pieces.Queen;
 
@@ -98,6 +80,24 @@ export default class AttackBoard {
                             this.pieces.Rook1 = piece;
                             this.cells[row][column] = new Cell(row, column, this.type, piece); 
                         } else if (row === 0) {
+                            const pieceKey = `Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET + ATTACK_BOARD_RIGHT_PAWN_INDEX_OFFSET}`;
+                            const piece = pieces[pieceKey as keyof PieceMap];
+
+                            this.pieces[pieceKey as keyof PieceMap] = piece;
+                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                        }
+                    } else {
+                        if (row === 0 && column === 0) {
+                            const piece = pieces.Queen;
+
+                            this.pieces.Queen = piece;
+                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                        } else if (row === 0 && column === 1) {
+                            const piece = pieces.Rook1;
+
+                            this.pieces.Rook1 = piece;
+                            this.cells[row][column] = new Cell(row, column, this.type, piece); 
+                        } else if (row === 1) {
                             const pieceKey = `Pawn${column + ATTACK_BOARD_PAWN_INDEX_OFFSET + ATTACK_BOARD_RIGHT_PAWN_INDEX_OFFSET}`;
                             const piece = pieces[pieceKey as keyof PieceMap];
 
