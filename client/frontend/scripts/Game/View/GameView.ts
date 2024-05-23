@@ -88,6 +88,8 @@ export default class GameView {
     private mainLight: THREE.Light;
     private mtlLoader: MTLLoader;
     private objLoader: OBJLoader;
+    private raycaster: THREE.Raycaster;
+    private pointer: THREE.Vector2;
     private static instance: GameView;
 
     private constructor(canvas: HTMLElement) {
@@ -110,7 +112,20 @@ export default class GameView {
         this.mtlLoader = new MTLLoader();
         this.objLoader = new OBJLoader();
 
+        this.raycaster = new THREE.Raycaster();
+        this.pointer = new THREE.Vector2();
+
+        this.raycaster.setFromCamera(this.pointer, this.camera);
+
         this.scene.add(this.mainLight);
+
+        // even listeners
+        window.addEventListener('pointermove', (event) => {
+            console.log("pointer moved");
+            console.log({pointer: this.pointer});
+            this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            this.pointer.y =- (event.clientY / window.innerHeight) * 2 + 1;
+        });
     }
 
     public static getInstance(canvas: HTMLElement): GameView {
@@ -143,6 +158,15 @@ export default class GameView {
         }
 
         this.controls.update();
+
+        this.raycaster.setFromCamera(this.pointer, this.camera);
+
+        const intersects = this.raycaster.intersectObjects(this.scene.children);
+
+        for (let i = 0; i < intersects.length; i++) {
+            console.log(intersects);
+            intersects[i].object.rotateX(3.14 * 1.3);
+        }
 
 		this.renderer.render(this.scene, this.camera);
         
