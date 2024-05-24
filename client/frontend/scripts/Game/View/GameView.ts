@@ -113,19 +113,8 @@ export default class GameView {
         this.objLoader = new OBJLoader();
 
         this.raycaster = new THREE.Raycaster();
-        this.pointer = new THREE.Vector2();
-
-        this.raycaster.setFromCamera(this.pointer, this.camera);
 
         this.scene.add(this.mainLight);
-
-        // even listeners
-        window.addEventListener('pointermove', (event) => {
-            console.log("pointer moved");
-            console.log({pointer: this.pointer});
-            this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-            this.pointer.y =- (event.clientY / window.innerHeight) * 2 + 1;
-        });
     }
 
     public static getInstance(canvas: HTMLElement): GameView {
@@ -158,15 +147,6 @@ export default class GameView {
         }
 
         this.controls.update();
-
-        this.raycaster.setFromCamera(this.pointer, this.camera);
-
-        const intersects = this.raycaster.intersectObjects(this.scene.children);
-
-        for (let i = 0; i < intersects.length; i++) {
-            console.log(intersects);
-            intersects[i].object.rotateX(3.14 * 1.3);
-        }
 
 		this.renderer.render(this.scene, this.camera);
         
@@ -302,6 +282,8 @@ export default class GameView {
     private renderPiece(piece: ViewPiece, cellObject: THREE.Object3D) { 
         const {mtl, obj} = PIECE_RENDERED_MODEL[piece.name];
         const scene = this.scene;
+        const camera = this.camera;
+        const raycaster = this.raycaster;
 
         this.mtlLoader.load(`assets/chess-pieces/${mtl}.mtl`, (materials) => {
             materials.preload();
@@ -318,6 +300,16 @@ export default class GameView {
                 object.position.setFromMatrixPosition(cellObject.matrixWorld);
                 object.translateZ(0.5);
                 scene.add(object);
+                GameView.addObjectEventListener(
+                    camera,
+                    scene,
+                    raycaster,
+                    object,
+                    (o) => {
+                        console.log({o});
+                        object.translateZ(1)
+                    },
+                );
             });
         });
     }
@@ -334,6 +326,36 @@ export default class GameView {
         }
 
         return needResize;
+    }
+
+    private static addObjectEventListener(
+        camera: THREE.Camera,
+        scene: THREE.Scene,
+        raycaster: THREE.Raycaster,
+        object: THREE.Object3D,
+        handler: (object: THREE.Object3D) => void,
+    ) {
+        console.log({object});
+        const objectId = object.uuid;
+        const mouse = new THREE.Vector2();
+
+        document.addEventListener("click", (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(scene.children);
+
+            const isIntersected = intersects.find(
+                (intersectedEl) => intersectedEl.object.uuid === objectId 
+            );
+
+            // TODO: maybe intersection is not happening
+            if (isIntersected) {
+                handler(object);
+            }
+        });
     }
 
 }
