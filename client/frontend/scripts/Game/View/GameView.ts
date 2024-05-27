@@ -335,7 +335,6 @@ export default class GameView {
         object: THREE.Object3D,
         handler: (object: THREE.Object3D) => void,
     ) {
-        console.log({object});
         const objectId = object.uuid;
         const mouse = new THREE.Vector2();
 
@@ -351,7 +350,6 @@ export default class GameView {
                 (intersectedEl) => intersectedEl.object.uuid === objectId 
             );
 
-            // TODO: maybe intersection is not happening
             if (isIntersected) {
                 handler(object);
             }
