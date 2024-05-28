@@ -12,7 +12,9 @@ const ASSET_EXTENSION_MIME_TYPE_MAP = {
     ".png": "image/png",
     ".svg": "image/svg+xml",
     ".mtl": "text/plain",
-    ".obj": "text/plain" 
+    ".obj": "text/plain",
+    ".glb": "model/gltf-binary",
+    ".gltf": "model/gltf+json"
 };
 
 function respondWithContentType(err, data, stream, mimeType = "") {
@@ -68,6 +70,14 @@ function respondWithOBJ(err, data, stream) {
     return respondWithContentType(err, data, stream, ASSET_EXTENSION_MIME_TYPE_MAP[".obj"]);
 }
 
+function respondWithGLB(err, data, stream) {
+    return respondWithContentType(err, data, stream, ASSET_EXTENSION_MIME_TYPE_MAP[".glb"]);
+}
+
+function respondWithGLTF(err, data, stream) {
+    return respondWithContentType(err, data, stream, ASSET_EXTENSION_MIME_TYPE_MAP[".gltf"]);
+}
+
 export {
 	respondWithHTML,
     respondWithJS,
@@ -75,5 +85,7 @@ export {
     respondWithPNG,
     respondWithSVG,
     respondWithMTL,
-    respondWithOBJ
+    respondWithOBJ,
+    respondWithGLB,
+    respondWithGLTF
 };

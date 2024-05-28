@@ -46,6 +46,10 @@ server.on("stream", (stream, headers) => {
                 return respondWithMTL(err, data, stream);
             } else if (assetExtension === ".obj") {
                 return respondWithOBJ(err, data, stream);
+            } else if (assetExtension === ".glb") {
+                return respondWithGLB(err, data, stream);
+            } else if (assetExtension === ".gltf") {
+                return responseWithGLTF(err, data, stream);
             } else {
                 // TODO: check headers to be appropriate for this error
                 stream.respond({
