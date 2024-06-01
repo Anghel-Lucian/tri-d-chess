@@ -8,8 +8,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
-import { ThreeDCoordinates, ViewAttackBoard, ViewData, ViewFullBoard, ViewPiece } from "./utils";
+import { ThreeDCoordinates, ViewAttackBoard, ViewData, ViewFullBoard, ViewPiece } from './utils';
 import { 
     CAMERA_ASPECT,
     CAMERA_FAR,
@@ -23,10 +24,17 @@ import {
     PIECE_RENDERED_MODEL
 } from './constants';
 import { PlayerColor, PieceName, FULL_BOARD_DIMENSION, AttackBoardType, FullBoardType } from '../common';
+import MouseMeshInteraction from './MouseMeshInteraction';
 
 const cellGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH);
-const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({color: 0xfcfafa}); 
-const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({color: 0xe64578}); 
+const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
+    color: 0xfcfafa,
+    side: THREE.DoubleSide,
+}); 
+const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
+    color: 0xe64578,
+    side: THREE.DoubleSide,
+}); 
 const attackBoardsCoordinatesOffset = {
     bottomBottomRight: {
         x: 4,
@@ -113,7 +121,6 @@ export default class GameView {
         this.objLoader = new OBJLoader();
 
         this.raycaster = new THREE.Raycaster();
-
         this.scene.add(this.mainLight);
     }
 
@@ -188,6 +195,17 @@ export default class GameView {
             cell.translateX(cellX);
             cell.translateZ(cellZ);
 
+            GameView.addObjectEventListener(
+                this.camera,
+                this.scene,
+                this.raycaster,
+                cell,
+                (o) => {
+                    console.log({o});
+                    cell.translateZ(1)
+                },
+            );
+
             if (cellData.piece) {
                 this.renderPiece(cellData.piece, cell);
             }
@@ -235,6 +253,17 @@ export default class GameView {
                         this.renderPiece(cellData.piece, cell);
                     }
 
+                    GameView.addObjectEventListener(
+                        this.camera,
+                        this.scene,
+                        this.raycaster,
+                        cell,
+                        (o) => {
+                            console.log({o});
+                            cell.translateZ(1)
+                        },
+                    );
+
                     this.scene.add(cell);
                 }
             } else {
@@ -268,6 +297,17 @@ export default class GameView {
                     cell.translateX(cellX);
                     cell.translateZ(cellZ);
 
+                    GameView.addObjectEventListener(
+                        this.camera,
+                        this.scene,
+                        this.raycaster,
+                        cell,
+                        (o) => {
+                            console.log({o});
+                            cell.translateZ(1)
+                        },
+                    );
+
                     if (cellData.piece) {
                         this.renderPiece(cellData.piece, cell);
                     }
@@ -284,14 +324,25 @@ export default class GameView {
         const scene = this.scene;
         const camera = this.camera;
         const raycaster = this.raycaster;
+        const mmi = new MouseMeshInteraction(scene, camera);
 
+        /*
         this.mtlLoader.load(`assets/chess-pieces/${mtl}.mtl`, (materials) => {
             materials.preload();
-            
-            this.objLoader.setMaterials(materials);
-            this.objLoader.load(`assets/chess-pieces/${obj}.obj`, (object) => {
+         */   
+            const objLoader = new OBJLoader();
+           // objLoader.setMaterials(materials);
+            objLoader.load(`assets/chess-pieces/${obj}.obj`, (object) => {
                 object.scale.setScalar(0.03);
                 object.rotateX(3.14 * 1.5);
+
+                object.traverse(child => {
+                    if (child instanceof THREE.Mesh) {
+                        child.material = new THREE.MeshBasicMaterial({
+                            color: 0x444444,
+                        });
+                    }
+                });
 
                 if (piece.color === PlayerColor.White) {
                     object.rotateZ(3.14 * 1);
@@ -300,6 +351,7 @@ export default class GameView {
                 object.position.setFromMatrixPosition(cellObject.matrixWorld);
                 object.translateZ(0.5);
                 scene.add(object);
+                /*
                 GameView.addObjectEventListener(
                     camera,
                     scene,
@@ -310,8 +362,9 @@ export default class GameView {
                         object.translateZ(1)
                     },
                 );
+                */
             });
-        });
+       // });
     }
 
     private resizeRendererToDisplaySize(renderer: THREE.Renderer) {
@@ -339,16 +392,20 @@ export default class GameView {
         const mouse = new THREE.Vector2();
 
         document.addEventListener("click", (e) => {
+            console.log("click");
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
+            console.log({mouse});
             raycaster.setFromCamera(mouse, camera);
 
-            const intersects = raycaster.intersectObjects(scene.children);
+            const intersects = raycaster.intersectObject(object, true);
 
+            console.log({intersects});
             const isIntersected = intersects.find(
                 (intersectedEl) => intersectedEl.object.uuid === objectId 
             );
+            console.log({isIntersected});
 
             if (isIntersected) {
                 handler(object);
