@@ -30,11 +30,13 @@ const cellGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(CELL_WIDTH, CELL_H
 const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
     color: 0xfcfafa,
     side: THREE.DoubleSide,
+    name: 'cell'
 }); 
 const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
     color: 0xe64578,
     side: THREE.DoubleSide,
 }); 
+cellMaterialBlack.name = 'cell';
 const attackBoardsCoordinatesOffset = {
     bottomBottomRight: {
         x: 4,
@@ -98,6 +100,7 @@ export default class GameView {
     private objLoader: OBJLoader;
     private raycaster: THREE.Raycaster;
     private pointer: THREE.Vector2;
+    private cellObjects: THREE.Object3D[];
     private static instance: GameView;
 
     private constructor(canvas: HTMLElement) {
@@ -122,6 +125,35 @@ export default class GameView {
 
         this.raycaster = new THREE.Raycaster();
         this.scene.add(this.mainLight);
+        this.cellObjects = [];
+
+        const raycaster = this.raycaster;
+        const camera = this.camera;
+        const scene = this.scene;
+        document.addEventListener("click", (e) => {
+            console.log("click");
+            const mouse = new THREE.Vector2();
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            console.log({mouse});
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            console.log({intersects});
+            /*
+            const isIntersected = intersects.find(
+                (intersectedEl) => intersectedEl.object.uuid === objectId 
+            );
+            console.log({isIntersected});
+            */
+
+            if (intersects) {
+                console.log({cell: intersects[0]});
+                intersects[0].object.translateZ(10);
+            }
+        });
     }
 
     public static getInstance(canvas: HTMLElement): GameView {
@@ -195,6 +227,7 @@ export default class GameView {
             cell.translateX(cellX);
             cell.translateZ(cellZ);
 
+            /*
             GameView.addObjectEventListener(
                 this.camera,
                 this.scene,
@@ -205,17 +238,20 @@ export default class GameView {
                     cell.translateZ(1)
                 },
             );
+            */
 
             if (cellData.piece) {
                 this.renderPiece(cellData.piece, cell);
             }
 
             this.scene.add(cell);
+            this.cellObjects.push(cell);
         }
     }
 
     private renderFullBoardAttackBoards(fullBoard: ViewFullBoard) {
         let cellColor: PlayerColor = PlayerColor.White;
+        const mmi = new MouseMeshInteraction(this.scene, this.camera)
 
         for (const board of fullBoard.attackBoards) {
             if (board.type === AttackBoardType.Left) {
@@ -253,6 +289,12 @@ export default class GameView {
                         this.renderPiece(cellData.piece, cell);
                     }
 
+                    /*
+                    mmi.addHandler('cell', 'click', function(mesh: THREE.Mesh) {
+                        cell.translateZ(1)
+                    });
+                    */
+                    /*
                     GameView.addObjectEventListener(
                         this.camera,
                         this.scene,
@@ -263,8 +305,10 @@ export default class GameView {
                             cell.translateZ(1)
                         },
                     );
+                    */
 
                     this.scene.add(cell);
+                    this.cellObjects.push(cell);
                 }
             } else {
                 let coordinatesOffset;
@@ -297,6 +341,7 @@ export default class GameView {
                     cell.translateX(cellX);
                     cell.translateZ(cellZ);
 
+                    /*
                     GameView.addObjectEventListener(
                         this.camera,
                         this.scene,
@@ -307,12 +352,14 @@ export default class GameView {
                             cell.translateZ(1)
                         },
                     );
+                    */
 
                     if (cellData.piece) {
                         this.renderPiece(cellData.piece, cell);
                     }
 
                     this.scene.add(cell);
+                    this.cellObjects.push(cell);
                 }
             }
         }
@@ -399,16 +446,18 @@ export default class GameView {
             console.log({mouse});
             raycaster.setFromCamera(mouse, camera);
 
-            const intersects = raycaster.intersectObject(object, true);
+            const intersects = raycaster.intersectObjects(scene.children, true);
 
             console.log({intersects});
+            /*
             const isIntersected = intersects.find(
                 (intersectedEl) => intersectedEl.object.uuid === objectId 
             );
             console.log({isIntersected});
+            */
 
-            if (isIntersected) {
-                handler(object);
+            if (intersects) {
+                handler(intersects[0].object);
             }
         });
     }
