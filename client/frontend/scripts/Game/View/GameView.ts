@@ -126,34 +126,6 @@ export default class GameView {
         this.raycaster = new THREE.Raycaster();
         this.scene.add(this.mainLight);
         this.cellObjects = [];
-
-        const raycaster = this.raycaster;
-        const camera = this.camera;
-        const scene = this.scene;
-        document.addEventListener("click", (e) => {
-            console.log("click");
-            const mouse = new THREE.Vector2();
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-            console.log({mouse});
-            raycaster.setFromCamera(mouse, camera);
-
-            const intersects = raycaster.intersectObjects(scene.children, true);
-
-            console.log({intersects});
-            /*
-            const isIntersected = intersects.find(
-                (intersectedEl) => intersectedEl.object.uuid === objectId 
-            );
-            console.log({isIntersected});
-            */
-
-            if (intersects) {
-                console.log({cell: intersects[0]});
-                intersects[0].object.translateZ(10);
-            }
-        });
     }
 
     public static getInstance(canvas: HTMLElement): GameView {
@@ -199,6 +171,23 @@ export default class GameView {
         this.renderFullBoardAttackBoards(data.fullBoardMiddle);
         this.renderFullBoard(data.fullBoardBottom);
         this.renderFullBoardAttackBoards(data.fullBoardBottom);
+
+        const raycaster = this.raycaster;
+        const camera = this.camera;
+        const scene = this.scene;
+        document.addEventListener("click", (e) => {
+            const mouse = new THREE.Vector2();
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects) {
+                intersects[0].object.translateZ(10);
+            }
+        });
     }
 
     /**
@@ -227,23 +216,11 @@ export default class GameView {
             cell.translateX(cellX);
             cell.translateZ(cellZ);
 
-            /*
-            GameView.addObjectEventListener(
-                this.camera,
-                this.scene,
-                this.raycaster,
-                cell,
-                (o) => {
-                    console.log({o});
-                    cell.translateZ(1)
-                },
-            );
-            */
-
             if (cellData.piece) {
                 this.renderPiece(cellData.piece, cell);
             }
 
+            cell.userData = cellData;
             this.scene.add(cell);
             this.cellObjects.push(cell);
         }
@@ -251,7 +228,6 @@ export default class GameView {
 
     private renderFullBoardAttackBoards(fullBoard: ViewFullBoard) {
         let cellColor: PlayerColor = PlayerColor.White;
-        const mmi = new MouseMeshInteraction(this.scene, this.camera)
 
         for (const board of fullBoard.attackBoards) {
             if (board.type === AttackBoardType.Left) {
@@ -289,24 +265,7 @@ export default class GameView {
                         this.renderPiece(cellData.piece, cell);
                     }
 
-                    /*
-                    mmi.addHandler('cell', 'click', function(mesh: THREE.Mesh) {
-                        cell.translateZ(1)
-                    });
-                    */
-                    /*
-                    GameView.addObjectEventListener(
-                        this.camera,
-                        this.scene,
-                        this.raycaster,
-                        cell,
-                        (o) => {
-                            console.log({o});
-                            cell.translateZ(1)
-                        },
-                    );
-                    */
-
+                    cell.userData = cellData;
                     this.scene.add(cell);
                     this.cellObjects.push(cell);
                 }
@@ -341,23 +300,11 @@ export default class GameView {
                     cell.translateX(cellX);
                     cell.translateZ(cellZ);
 
-                    /*
-                    GameView.addObjectEventListener(
-                        this.camera,
-                        this.scene,
-                        this.raycaster,
-                        cell,
-                        (o) => {
-                            console.log({o});
-                            cell.translateZ(1)
-                        },
-                    );
-                    */
-
                     if (cellData.piece) {
                         this.renderPiece(cellData.piece, cell);
                     }
 
+                    cell.userData = cellData;
                     this.scene.add(cell);
                     this.cellObjects.push(cell);
                 }
@@ -369,49 +316,29 @@ export default class GameView {
     private renderPiece(piece: ViewPiece, cellObject: THREE.Object3D) { 
         const {mtl, obj} = PIECE_RENDERED_MODEL[piece.name];
         const scene = this.scene;
-        const camera = this.camera;
-        const raycaster = this.raycaster;
-        const mmi = new MouseMeshInteraction(scene, camera);
 
-        /*
         this.mtlLoader.load(`assets/chess-pieces/${mtl}.mtl`, (materials) => {
             materials.preload();
-         */   
             const objLoader = new OBJLoader();
-           // objLoader.setMaterials(materials);
+            objLoader.setMaterials(materials);
             objLoader.load(`assets/chess-pieces/${obj}.obj`, (object) => {
                 object.scale.setScalar(0.03);
                 object.rotateX(3.14 * 1.5);
-
-                object.traverse(child => {
-                    if (child instanceof THREE.Mesh) {
-                        child.material = new THREE.MeshBasicMaterial({
-                            color: 0x444444,
-                        });
-                    }
-                });
-
                 if (piece.color === PlayerColor.White) {
                     object.rotateZ(3.14 * 1);
                 }
 
                 object.position.setFromMatrixPosition(cellObject.matrixWorld);
                 object.translateZ(0.5);
+                object.traverse(child => {
+                    if (child instanceof THREE.Mesh) {
+                        child.userData.piece = piece;
+                        child.userData.cell = cellObject;
+                    }
+                });
                 scene.add(object);
-                /*
-                GameView.addObjectEventListener(
-                    camera,
-                    scene,
-                    raycaster,
-                    object,
-                    (o) => {
-                        console.log({o});
-                        object.translateZ(1)
-                    },
-                );
-                */
             });
-       // });
+       });
     }
 
     private resizeRendererToDisplaySize(renderer: THREE.Renderer) {
@@ -427,39 +354,4 @@ export default class GameView {
 
         return needResize;
     }
-
-    private static addObjectEventListener(
-        camera: THREE.Camera,
-        scene: THREE.Scene,
-        raycaster: THREE.Raycaster,
-        object: THREE.Object3D,
-        handler: (object: THREE.Object3D) => void,
-    ) {
-        const objectId = object.uuid;
-        const mouse = new THREE.Vector2();
-
-        document.addEventListener("click", (e) => {
-            console.log("click");
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-            console.log({mouse});
-            raycaster.setFromCamera(mouse, camera);
-
-            const intersects = raycaster.intersectObjects(scene.children, true);
-
-            console.log({intersects});
-            /*
-            const isIntersected = intersects.find(
-                (intersectedEl) => intersectedEl.object.uuid === objectId 
-            );
-            console.log({isIntersected});
-            */
-
-            if (intersects) {
-                handler(intersects[0].object);
-            }
-        });
-    }
-
 }
