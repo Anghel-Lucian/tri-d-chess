@@ -13,7 +13,9 @@ export interface ViewCell {
     hostedAttackBoard: {
         type: AttackBoardType,
         color: PlayerColor
-    }
+    },
+    // TODO: add this to cells on an attack board
+    isOnAttackBoard: boolean
 }
 
 export interface ViewAttackBoard {

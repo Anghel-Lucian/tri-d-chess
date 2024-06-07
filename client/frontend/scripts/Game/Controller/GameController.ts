@@ -2,7 +2,7 @@ import Cell from "../Model/Cell";
 import Game from "../Model/Game";
 import GameView from "../View/GameView";
 import { SerializedBoards, SerializedFullBoard } from "../Model/common";
-import { ViewData, ViewCell, ViewAttackBoard } from "../View/utils";
+import { ViewData, ViewCell, ViewAttackBoard, ViewPiece } from "../View/utils";
 import {
     ATTACK_BOARD_DIMENSION,
     AttackBoardType,
@@ -29,7 +29,6 @@ export default class GameController {
 
     private formatViewData(): GameController {
         const {fullBoardTop, fullBoardMiddle, fullBoardBottom}: SerializedBoards = this.game.getSerializedBoards(); 
-        console.log({fullBoardBottom});
         const {playerOne, playerTwo} = this.game.getPlayers();
         const whitePieces = this.game.getWhitePieces();
         const blackPieces = this.game.getBlackPieces();
@@ -148,9 +147,18 @@ export default class GameController {
     private renderView(): GameController {
         this.view = GameView.getInstance(this.canvas);                  
 
-        this.view.startRendering(this.data);
+        this.view.startRendering(this.data, this.getPiecePossibleMoves);
 
         return this;
+    }
+
+    private getPiecePossibleMoves(piece: ViewPiece, cell: ViewCell): ViewCell[] {
+        console.log({
+            piece,
+            cell,
+        });
+
+        return [];
     }
 
 }

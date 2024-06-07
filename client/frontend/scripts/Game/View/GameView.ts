@@ -10,7 +10,14 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
-import { ThreeDCoordinates, ViewAttackBoard, ViewData, ViewFullBoard, ViewPiece } from './utils';
+import { 
+    ThreeDCoordinates, 
+    ViewAttackBoard, 
+    ViewData, 
+    ViewFullBoard, 
+    ViewPiece,
+    ViewCell,
+} from './utils';
 import { 
     CAMERA_ASPECT,
     CAMERA_FAR,
@@ -101,6 +108,7 @@ export default class GameView {
     private raycaster: THREE.Raycaster;
     private pointer: THREE.Vector2;
     private cellObjects: THREE.Object3D[];
+    private getPiecePossibleMoves: (piece: ViewPiece, cell: ViewCell) => ViewCell[];
     private static instance: GameView;
 
     private constructor(canvas: HTMLElement) {
@@ -136,7 +144,11 @@ export default class GameView {
         return this.instance;
     }
 
-    public startRendering(data: ViewData) {
+    public startRendering(
+        data: ViewData, 
+        getPiecePossibleMoves: (piece: ViewPiece, cell: ViewCell) => ViewCell[]
+    ) {
+        this.getPiecePossibleMoves = getPiecePossibleMoves;
         this.renderFullBoards(data);
 
         requestAnimationFrame(this.render.bind(this));
@@ -175,6 +187,7 @@ export default class GameView {
         const raycaster = this.raycaster;
         const camera = this.camera;
         const scene = this.scene;
+        const highlightPossibleMoves = this.highlightPossibleMoves.bind(this);
         document.addEventListener("click", (e) => {
             const mouse = new THREE.Vector2();
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -184,8 +197,12 @@ export default class GameView {
 
             const intersects = raycaster.intersectObjects(scene.children, true);
 
-            if (intersects) {
-                intersects[0].object.translateZ(10);
+            if (intersects && intersects.length) {
+                const userData = intersects[0].object.userData;
+
+                if (userData.piece && userData.cell) {
+                    highlightPossibleMoves(userData.piece, userData.cell.userData);
+                }
             }
         });
     }
@@ -353,5 +370,11 @@ export default class GameView {
         }
 
         return needResize;
+    }
+
+    private highlightPossibleMoves(piece: ViewPiece, cell: ViewCell) {
+        const possibleEndCells = this.getPiecePossibleMoves(piece, cell);
+
+        console.log({possibleEndCells});
     }
 }
