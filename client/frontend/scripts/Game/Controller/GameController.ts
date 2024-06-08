@@ -6,6 +6,7 @@ import { ViewData, ViewCell, ViewAttackBoard, ViewPiece } from "../View/utils";
 import {
     ATTACK_BOARD_DIMENSION,
     AttackBoardType,
+    BoardType,
     FULL_BOARD_DIMENSION,
     FullBoardType,
     getPieceMapAlivePieces,
@@ -65,7 +66,7 @@ export default class GameController {
 
         for (let i = 0; i < FULL_BOARD_DIMENSION; i++) {
             for (let j = 0; j < FULL_BOARD_DIMENSION; j++) {
-                cells.push(this.formatCell(fullBoardData.cells[i][j], fullBoardType));
+                cells.push(this.formatCell(fullBoardData.cells[i][j], fullBoardType, BoardType.Full));
             }
         }
 
@@ -75,7 +76,7 @@ export default class GameController {
 
             for (let i = 0; i < ATTACK_BOARD_DIMENSION; i++) {
                 for (let j = 0; j < ATTACK_BOARD_DIMENSION; j++) {
-                    attackBoardCells.push(this.formatCell(fullBoardData.attackBoardLeft.cells[i][j], AttackBoardType.Left));
+                    attackBoardCells.push(this.formatCell(fullBoardData.attackBoardLeft.cells[i][j], AttackBoardType.Left, BoardType.Attack));
                 }
             }
 
@@ -93,7 +94,7 @@ export default class GameController {
 
             for (let i = 0; i < ATTACK_BOARD_DIMENSION; i++) {
                 for (let j = 0; j < ATTACK_BOARD_DIMENSION; j++) {
-                    attackBoardCells.push(this.formatCell(fullBoardData.attackBoardRight.cells[i][j], AttackBoardType.Left));
+                    attackBoardCells.push(this.formatCell(fullBoardData.attackBoardRight.cells[i][j], AttackBoardType.Right, BoardType.Attack));
                 }
             }
 
@@ -128,7 +129,11 @@ export default class GameController {
         return this;
     }
 
-    private formatCell(rawCellData: Cell, boardType: FullBoardType | AttackBoardType): ViewCell {
+    private formatCell(
+        rawCellData: Cell, 
+        specificBoardType: FullBoardType | AttackBoardType,
+        boardType: BoardType 
+    ): ViewCell {
         return {
             x: rawCellData.x,
             y: rawCellData.y,
@@ -136,11 +141,12 @@ export default class GameController {
                 name: rawCellData.piece.name,
                 color: rawCellData.piece.color
             } : null,
-            boardType,
+            boardType: specificBoardType,
             hostedAttackBoard: rawCellData.hostedAttackBoard ? {
                 type: rawCellData.hostedAttackBoard.type,
                 color: rawCellData.hostedAttackBoard.color
-            } : null
+            } : null,
+            isOnAttackBoard: boardType === BoardType.Attack
         }
     }
 

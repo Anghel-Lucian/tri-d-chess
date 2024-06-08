@@ -23,6 +23,11 @@ export enum FullBoardType {
     Bottom
 }
 
+export enum BoardType {
+    Attack,
+    Full
+}
+
 export const FULL_BOARD_DIMENSION = 4;
 export const ATTACK_BOARD_DIMENSION = 2;
 // Full boards place the first 4 pawns, and then the attack boards take the rest
