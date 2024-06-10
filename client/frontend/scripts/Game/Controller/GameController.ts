@@ -146,14 +146,16 @@ export default class GameController {
                 type: rawCellData.hostedAttackBoard.type,
                 color: rawCellData.hostedAttackBoard.color
             } : null,
-            isOnAttackBoard: boardType === BoardType.Attack
+            isOnAttackBoard: boardType === BoardType.Attack,
+            object: null,
+            renderedColor: null
         }
     }
 
     private renderView(): GameController {
         this.view = GameView.getInstance(this.canvas);                  
 
-        this.view.startRendering(this.data, this.getPiecePossibleMoves);
+        this.view.startRendering(this.data, this.getPiecePossibleMoves.bind(this));
 
         return this;
     }
@@ -163,8 +165,26 @@ export default class GameController {
             piece,
             cell,
         });
+        const possibleCells: ViewCell[] = [];
+        if (cell.isOnAttackBoard) {
+            //
+        } else {
+            if (cell.boardType === FullBoardType.Bottom) {
+                console.log("getPiecePossibleMoves: boardBottom");
+                for (const c of this.data.fullBoardBottom.cells) {
+                    if (cell.x + 2 === c.x) {
+                        possibleCells.push(c);
+                    }
+                }
+            } else if (cell.boardType === FullBoardType.Middle) {
+                //
+            } else if (cell.boardType === FullBoardType.Top) {
+                //
+            }
+        }
 
-        return [];
+
+        return possibleCells;
     }
 
 }

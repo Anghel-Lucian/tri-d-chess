@@ -43,6 +43,14 @@ const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
     color: 0xe64578,
     side: THREE.DoubleSide,
 }); 
+const cellMaterialWhiteHighlighted: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
+    color: 0xfcffff,
+    side: THREE.DoubleSide,
+}); 
+const cellMaterialBlackHighlighted: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
+    color: 0xe64fff,
+    side: THREE.DoubleSide,
+}); 
 cellMaterialBlack.name = 'cell';
 const attackBoardsCoordinatesOffset = {
     bottomBottomRight: {
@@ -239,6 +247,8 @@ export default class GameView {
 
             cell.userData = cellData;
             this.scene.add(cell);
+            cellData.object = cell;
+            cellData.renderedColor = cellColor;
             this.cellObjects.push(cell);
         }
     }
@@ -284,6 +294,8 @@ export default class GameView {
 
                     cell.userData = cellData;
                     this.scene.add(cell);
+                    cellData.object = cell;
+                    cellData.renderedColor = cellColor;
                     this.cellObjects.push(cell);
                 }
             } else {
@@ -323,6 +335,8 @@ export default class GameView {
 
                     cell.userData = cellData;
                     this.scene.add(cell);
+                    cellData.object = cell;
+                    cellData.renderedColor = cellColor;
                     this.cellObjects.push(cell);
                 }
             }
@@ -374,7 +388,13 @@ export default class GameView {
 
     private highlightPossibleMoves(piece: ViewPiece, cell: ViewCell) {
         const possibleEndCells = this.getPiecePossibleMoves(piece, cell);
-
         console.log({possibleEndCells});
+        for (const c of possibleEndCells) {
+            if (c.renderedColor === PlayerColor.Black) {
+                c.object.material = cellMaterialBlackHighlighted;
+            } else {
+                c.object.material = cellMaterialWhiteHighlighted;
+            }
+        }
     }
 }

@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { AttackBoardType, FullBoardType, PlayerColor, Piece, PieceName } from "../common"
 
 export interface ViewPiece {
@@ -14,8 +15,9 @@ export interface ViewCell {
         type: AttackBoardType,
         color: PlayerColor
     },
-    // TODO: add this to cells on an attack board
-    isOnAttackBoard: boolean
+    isOnAttackBoard: boolean,
+    object: THREE.Mesh,
+    renderedColor: PlayerColor
 }
 
 export interface ViewAttackBoard {
