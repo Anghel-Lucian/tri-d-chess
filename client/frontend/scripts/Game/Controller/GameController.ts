@@ -9,9 +9,17 @@ import {
     BoardType,
     FULL_BOARD_DIMENSION,
     FullBoardType,
+    PieceName,
+    PlayerColor,
     getPieceMapAlivePieces,
     getPieceMapDeadPieces
 } from "../common";
+
+
+type PieceMoveOffset = {
+    x: number,
+    y: number
+};
 
 export default class GameController {
     game: Game;
@@ -160,6 +168,8 @@ export default class GameController {
         return this;
     }
 
+    // TODO: you need to account for obstacles (i.e., other pieces)
+    // TODO: need to handle moving across boards
     private getPiecePossibleMoves(piece: ViewPiece, cell: ViewCell): ViewCell[] {
         console.log({
             piece,
@@ -169,22 +179,58 @@ export default class GameController {
         if (cell.isOnAttackBoard) {
             //
         } else {
+            let cells: ViewCell[] = [];
+
             if (cell.boardType === FullBoardType.Bottom) {
-                console.log("getPiecePossibleMoves: boardBottom");
-                for (const c of this.data.fullBoardBottom.cells) {
-                    if (cell.x + 2 === c.x) {
+                cells = this.data.fullBoardBottom.cells;
+            } else if (cell.boardType === FullBoardType.Middle) {
+                cells = this.data.fullBoardMiddle.cells;
+            } else if (cell.boardType === FullBoardType.Top) {
+                cells = this.data.fullBoardTop.cells;
+            }
+
+            for (const c of cells) {
+                const moveOffsets = this.getMoveOffsetBasedOnPiece(piece);
+
+                for (const {x, y} of moveOffsets) {
+                    console.log({
+                        cell,
+                        c,
+                        x,
+                        y,
+                        black: piece.color === PlayerColor.Black
+                    });
+
+                    if (cell.x + x === c.x && cell.y + y === c.y) {
+                        console.log("pushed cell");
                         possibleCells.push(c);
                     }
                 }
-            } else if (cell.boardType === FullBoardType.Middle) {
-                //
-            } else if (cell.boardType === FullBoardType.Top) {
-                //
             }
         }
 
 
         return possibleCells;
+    }
+
+    private getMoveOffsetBasedOnPiece(piece: ViewPiece): PieceMoveOffset[] {
+        const moveOffsets: PieceMoveOffset[] = [];
+
+        if (piece.name === PieceName.Pawn) {
+            if (piece.color === PlayerColor.Black) {
+                moveOffsets.push({
+                    x: 1,
+                    y: 0
+                });
+            } else {
+                moveOffsets.push({
+                    x: -1,
+                    y: 0
+                });
+            }
+        }
+
+        return moveOffsets;
     }
 
 }

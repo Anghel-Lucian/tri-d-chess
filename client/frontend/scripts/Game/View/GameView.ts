@@ -44,11 +44,11 @@ const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
     side: THREE.DoubleSide,
 }); 
 const cellMaterialWhiteHighlighted: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
-    color: 0xfcffff,
+    color: 0x666666,
     side: THREE.DoubleSide,
 }); 
 const cellMaterialBlackHighlighted: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
-    color: 0xe64fff,
+    color: 0xb4184a,
     side: THREE.DoubleSide,
 }); 
 cellMaterialBlack.name = 'cell';
@@ -210,6 +210,9 @@ export default class GameView {
 
                 if (userData.piece && userData.cell) {
                     highlightPossibleMoves(userData.piece, userData.cell.userData);
+                } else {
+                    // TODO: remove this after debugging moving
+                    console.log({intersectedUserData: intersects[0].object.userData});
                 }
             }
         });
@@ -388,7 +391,6 @@ export default class GameView {
 
     private highlightPossibleMoves(piece: ViewPiece, cell: ViewCell) {
         const possibleEndCells = this.getPiecePossibleMoves(piece, cell);
-        console.log({possibleEndCells});
         for (const c of possibleEndCells) {
             if (c.renderedColor === PlayerColor.Black) {
                 c.object.material = cellMaterialBlackHighlighted;
