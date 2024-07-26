@@ -197,7 +197,7 @@ export default class GameController {
         return this;
     }
 
-    // TODO: you need to account for obstacles (i.e., other pieces)
+    // TODO: you need to account for obstacles (i.e., other pieces, except for knight cause he can jump over)
     // TODO: need to handle moving across boards
     // TODO: cover case where there are friendly or enemy pieces on the cells
     private getPiecePossibleMoves(piece: ViewPiece, cell: ViewCell): ViewCell[] {
@@ -210,34 +210,36 @@ export default class GameController {
 
         console.log({possibleCells});
 
+        let cells: ViewCell[] = [];
+    
         if (cell.isOnAttackBoard) {
-            //
-        } else {
-            let cells: ViewCell[] = [];
+            const attackBoard = this.getAttackBoardFromAttackBoardCell(cell);
 
-            if (cell.boardType === FullBoardType.Bottom) {
-                cells = this.data.fullBoardBottom.cells;
-            } else if (cell.boardType === FullBoardType.Middle) {
-                cells = this.data.fullBoardMiddle.cells;
-            } else if (cell.boardType === FullBoardType.Top) {
-                cells = this.data.fullBoardTop.cells;
-            }
+            cells = attackBoard.cells;
+        } else if (cell.boardType === FullBoardType.Bottom) {
+            cells = this.data.fullBoardBottom.cells;
+        } else if (cell.boardType === FullBoardType.Middle) {
+            cells = this.data.fullBoardMiddle.cells;
+        } else if (cell.boardType === FullBoardType.Top) {
+            cells = this.data.fullBoardTop.cells;
+        } 
 
-            for (const c of cells) {
-                const moveOffsets = this.getMoveOffsetBasedOnPiece(piece);
+        console.log({cells});
 
-                for (const {x, y} of moveOffsets) {
-                    console.log({
-                        cell,
-                        c,
-                        x,
-                        y,
-                        black: piece.color === PlayerColor.Black
-                    });
+        for (const c of cells) {
+            const moveOffsets = this.getMoveOffsetBasedOnPiece(piece);
 
-                    if (cell.x + x === c.x && cell.y + y === c.y) {
-                        possibleCells.push(c);
-                    }
+            for (const {x, y} of moveOffsets) {
+                console.log({
+                    cell,
+                    c,
+                    x,
+                    y,
+                    black: piece.color === PlayerColor.Black
+                });
+
+                if (cell.x + x === c.x && cell.y + y === c.y) {
+                    possibleCells.push(c);
                 }
             }
         }
@@ -247,31 +249,15 @@ export default class GameController {
 
     private pushCellsAboveAndBelow(cell: ViewCell, cells: ViewCell[]) {
         if (cell.isOnAttackBoard) {
-            let position: number[] = [];
+            const cellHostingAttackBoard = this.getCellHostingAttackBoardById(cell.attackBoardId); 
 
-            // find position of attack board
-            for (const fullBoard of [this.data.fullBoardBottom, this.data.fullBoardMiddle, this.data.fullBoardTop]) {
-                if (position.length) {
-                    break;
-                }
-
-                for (const c of fullBoard.cells) {
-                    if (c.hostedAttackBoard?.id === cell.attackBoardId) {
-                        // check if cell variable is on the correct corner of the
-                        // attack board
-                        if ((c.x === 0 && c.y === 0 && cell.x === 1 && cell.y === 1) ||
-                            (c.x === 0 && c.y === 3 && cell.x === 1 && cell.y === 0) ||
-                            (c.x === 3 && c.y === 0 && cell.x === 0 && cell.y === 1) ||
-                            (c.x === 3 && c.y === 3 && cell.x === 0 && cell.y === 0))
-                               {
-                            cells.push(c);
-                        } 
-
-                        position = [c.x, c.y];
-                        break;
-                    }
-                }
-            }
+            if ((cellHostingAttackBoard.x === 0 && cellHostingAttackBoard.y === 0 && cell.x === 1 && cell.y === 1) ||
+                (cellHostingAttackBoard.x === 0 && cellHostingAttackBoard.y === 3 && cell.x === 1 && cell.y === 0) ||
+                (cellHostingAttackBoard.x === 3 && cellHostingAttackBoard.y === 0 && cell.x === 0 && cell.y === 1) ||
+                (cellHostingAttackBoard.x === 3 && cellHostingAttackBoard.y === 3 && cell.x === 0 && cell.y === 0))
+                {
+                    cells.push(cellHostingAttackBoard);
+                } 
         } else {
             if (cell.boardType === FullBoardType.Bottom) {
                 if (cell.x >= 2) {
@@ -340,21 +326,176 @@ export default class GameController {
     private getMoveOffsetBasedOnPiece(piece: ViewPiece): PieceMoveOffset[] {
         const moveOffsets: PieceMoveOffset[] = [];
 
-        if (piece.name === PieceName.Pawn) {
-            if (piece.color === PlayerColor.Black) {
+        switch (piece.name) {
+            case PieceName.Pawn:
+                if (piece.color === PlayerColor.Black) {
+                    moveOffsets.push({
+                        x: 1,
+                        y: 0
+                    });
+                } else {
+                    moveOffsets.push({
+                        x: -1,
+                        y: 0
+                    });
+                }
+                break;
+            case PieceName.Knight:
+                moveOffsets.push({
+                    x: 2,
+                    y: -1
+                });
+                moveOffsets.push({
+                    x: 2,
+                    y: 1
+                });
+                moveOffsets.push({
+                    x: -2,
+                    y: 1
+                });
+                moveOffsets.push({
+                    x: -2,
+                    y: -1
+                });
+                break;
+            case PieceName.Rook:
+                for (let i = 1; i <= 3; i++) {
+                    moveOffsets.push({
+                        x: i,
+                        y: 0
+                    });
+                    moveOffsets.push({
+                        x: -i,
+                        y: 0
+                    });
+                    moveOffsets.push({
+                        x: 0,
+                        y: i
+                    });
+                    moveOffsets.push({
+                        x: 0,
+                        y: -i
+                    });
+                }
+                break;
+            case PieceName.Bishop:
+                for (let i = 1; i <= 3; i++) {
+                    moveOffsets.push({
+                        x: i,
+                        y: i
+                    });
+                    moveOffsets.push({
+                        x: -i,
+                        y: -i
+                    });
+                    moveOffsets.push({
+                        x: -i,
+                        y: i
+                    });
+                    moveOffsets.push({
+                        x: i,
+                        y: -i
+                    });
+                }
+                break;
+            case PieceName.Queen:
+                for (let i = 1; i <= 3; i++) {
+                    moveOffsets.push({
+                        x: i,
+                        y: 0
+                    });
+                    moveOffsets.push({
+                        x: -i,
+                        y: 0
+                    });
+                    moveOffsets.push({
+                        x: 0,
+                        y: i
+                    });
+                    moveOffsets.push({
+                        x: 0,
+                        y: -i
+                    });
+                    moveOffsets.push({
+                        x: i,
+                        y: i
+                    });
+                    moveOffsets.push({
+                        x: -i,
+                        y: -i
+                    });
+                    moveOffsets.push({
+                        x: -i,
+                        y: i
+                    });
+                    moveOffsets.push({
+                        x: i,
+                        y: -i
+                    });
+                }
+                break;
+            case PieceName.King:
                 moveOffsets.push({
                     x: 1,
                     y: 0
                 });
-            } else {
                 moveOffsets.push({
                     x: -1,
                     y: 0
                 });
-            }
+                moveOffsets.push({
+                    x: 0,
+                    y: 1
+                });
+                moveOffsets.push({
+                    x: 0,
+                    y: -1
+                });
+                moveOffsets.push({
+                    x: 1,
+                    y: 1
+                });
+                moveOffsets.push({
+                    x: -1,
+                    y: -1
+                });
+                moveOffsets.push({
+                    x: -1,
+                    y: 1
+                });
+                moveOffsets.push({
+                    x: 1,
+                    y: -1
+                });
+                break;
+            default:
+                break;
         }
 
         return moveOffsets;
     }
 
+    private getAttackBoardFromAttackBoardCell(cell: ViewCell): ViewAttackBoard {
+        for (const fullBoard of [this.data.fullBoardBottom, this.data.fullBoardMiddle, this.data.fullBoardTop]) {
+            for (const c of fullBoard.cells) {
+                if (c.hostedAttackBoard?.id === cell.attackBoardId) {
+                    return c.hostedAttackBoard;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private getCellHostingAttackBoardById(attackBoardId: string): ViewCell {
+        for (const fullBoard of [this.data.fullBoardBottom, this.data.fullBoardMiddle, this.data.fullBoardTop]) {
+            for (const c of fullBoard.cells) {
+                if (c.hostedAttackBoard?.id === attackBoardId) {
+                    return c;
+                }
+            }
+        }
+
+        return null;
+    }
 }
