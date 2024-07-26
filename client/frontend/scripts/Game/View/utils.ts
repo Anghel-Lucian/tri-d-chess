@@ -11,11 +11,9 @@ export interface ViewCell {
     y: number,
     piece: ViewPiece,
     boardType: FullBoardType | AttackBoardType,
-    hostedAttackBoard: {
-        type: AttackBoardType,
-        color: PlayerColor
-    },
+    hostedAttackBoard: ViewAttackBoard,
     isOnAttackBoard: boolean,
+    attackBoardId: string,
     object: THREE.Mesh,
     renderedColor: PlayerColor
 }
@@ -24,7 +22,8 @@ export interface ViewAttackBoard {
     cells: ViewCell[],
     type: AttackBoardType,
     color: PlayerColor,
-    captured: boolean
+    captured: boolean,
+    id: string
 }
 
 export interface ViewFullBoard {

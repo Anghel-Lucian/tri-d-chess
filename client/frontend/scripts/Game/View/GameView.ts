@@ -32,6 +32,7 @@ import {
 } from './constants';
 import { PlayerColor, PieceName, FULL_BOARD_DIMENSION, AttackBoardType, FullBoardType } from '../common';
 import MouseMeshInteraction from './MouseMeshInteraction';
+import Cell from '../Model/Cell';
 
 const cellGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH);
 const cellMaterialWhite: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
@@ -43,12 +44,8 @@ const cellMaterialBlack: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
     color: 0xe64578,
     side: THREE.DoubleSide,
 }); 
-const cellMaterialWhiteHighlighted: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
-    color: 0x666666,
-    side: THREE.DoubleSide,
-}); 
-const cellMaterialBlackHighlighted: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
-    color: 0xb4184a,
+const cellMaterialHighlighted: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
+    color: 0xc6e2ff,
     side: THREE.DoubleSide,
 }); 
 cellMaterialBlack.name = 'cell';
@@ -115,7 +112,7 @@ export default class GameView {
     private objLoader: OBJLoader;
     private raycaster: THREE.Raycaster;
     private pointer: THREE.Vector2;
-    private cellObjects: THREE.Object3D[];
+    private cells: ViewCell[];
     private getPiecePossibleMoves: (piece: ViewPiece, cell: ViewCell) => ViewCell[];
     private static instance: GameView;
 
@@ -141,7 +138,7 @@ export default class GameView {
 
         this.raycaster = new THREE.Raycaster();
         this.scene.add(this.mainLight);
-        this.cellObjects = [];
+        this.cells = [];
     }
 
     public static getInstance(canvas: HTMLElement): GameView {
@@ -252,7 +249,7 @@ export default class GameView {
             this.scene.add(cell);
             cellData.object = cell;
             cellData.renderedColor = cellColor;
-            this.cellObjects.push(cell);
+            this.cells.push(cellData);
         }
     }
 
@@ -299,7 +296,7 @@ export default class GameView {
                     this.scene.add(cell);
                     cellData.object = cell;
                     cellData.renderedColor = cellColor;
-                    this.cellObjects.push(cell);
+                    this.cells.push(cellData);
                 }
             } else {
                 let coordinatesOffset;
@@ -340,7 +337,7 @@ export default class GameView {
                     this.scene.add(cell);
                     cellData.object = cell;
                     cellData.renderedColor = cellColor;
-                    this.cellObjects.push(cell);
+                    this.cells.push(cellData);
                 }
             }
         }
@@ -391,11 +388,23 @@ export default class GameView {
 
     private highlightPossibleMoves(piece: ViewPiece, cell: ViewCell) {
         const possibleEndCells = this.getPiecePossibleMoves(piece, cell);
+        this.undoHighlighting();
+
+        if (possibleEndCells.length < 0) {
+            return;
+        }
+
         for (const c of possibleEndCells) {
-            if (c.renderedColor === PlayerColor.Black) {
-                c.object.material = cellMaterialBlackHighlighted;
+            c.object.material = cellMaterialHighlighted;
+        }
+    }
+
+    private undoHighlighting() {
+        for (const cell of this.cells) {
+            if (cell.renderedColor === PlayerColor.Black) {
+                cell.object.material = cellMaterialBlack;
             } else {
-                c.object.material = cellMaterialWhiteHighlighted;
+                cell.object.material = cellMaterialWhite;
             }
         }
     }

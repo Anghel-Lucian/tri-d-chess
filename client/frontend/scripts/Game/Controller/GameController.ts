@@ -72,26 +72,27 @@ export default class GameController {
         const attackBoards: ViewAttackBoard[] = [];
         const fullBoardType = fullBoardData.type;
 
-        for (let i = 0; i < FULL_BOARD_DIMENSION; i++) {
-            for (let j = 0; j < FULL_BOARD_DIMENSION; j++) {
-                cells.push(this.formatCell(fullBoardData.cells[i][j], fullBoardType, BoardType.Full));
-            }
-        }
-
         if (fullBoardData.attackBoardLeft) {
             const attackBoard: ViewAttackBoard = {} as ViewAttackBoard;
             const attackBoardCells: ViewCell[] = [];
 
+            attackBoard.type = fullBoardData.attackBoardLeft.type;
+            attackBoard.color = fullBoardData.attackBoardLeft.color;
+            attackBoard.captured = fullBoardData.attackBoardLeft.captured;
+            attackBoard.id = fullBoardData.attackBoardLeft.id;
+
             for (let i = 0; i < ATTACK_BOARD_DIMENSION; i++) {
                 for (let j = 0; j < ATTACK_BOARD_DIMENSION; j++) {
-                    attackBoardCells.push(this.formatCell(fullBoardData.attackBoardLeft.cells[i][j], AttackBoardType.Left, BoardType.Attack));
+                    attackBoardCells.push(this.formatCell(
+                        fullBoardData.attackBoardLeft.cells[i][j],
+                        AttackBoardType.Left,
+                        BoardType.Attack,
+                        attackBoard
+                    ));
                 }
             }
 
             attackBoard.cells = attackBoardCells;
-            attackBoard.type = fullBoardData.attackBoardLeft.type;
-            attackBoard.color = fullBoardData.attackBoardLeft.color;
-            attackBoard.captured = fullBoardData.attackBoardLeft.captured;
 
             attackBoards.push(attackBoard);
         }
@@ -100,18 +101,47 @@ export default class GameController {
             const attackBoard: ViewAttackBoard = {} as ViewAttackBoard;
             const attackBoardCells: ViewCell[] = [];
 
+            attackBoard.type = fullBoardData.attackBoardRight.type;
+            attackBoard.color = fullBoardData.attackBoardRight.color;
+            attackBoard.captured = fullBoardData.attackBoardRight.captured;
+            attackBoard.id = fullBoardData.attackBoardRight.id;
+
             for (let i = 0; i < ATTACK_BOARD_DIMENSION; i++) {
                 for (let j = 0; j < ATTACK_BOARD_DIMENSION; j++) {
-                    attackBoardCells.push(this.formatCell(fullBoardData.attackBoardRight.cells[i][j], AttackBoardType.Right, BoardType.Attack));
+                    attackBoardCells.push(this.formatCell(
+                        fullBoardData.attackBoardRight.cells[i][j],
+                        AttackBoardType.Right,
+                        BoardType.Attack,
+                        attackBoard
+                    ));
                 }
             }
 
             attackBoard.cells = attackBoardCells;
-            attackBoard.type = fullBoardData.attackBoardRight.type;
-            attackBoard.color = fullBoardData.attackBoardRight.color;
-            attackBoard.captured = fullBoardData.attackBoardRight.captured;
 
             attackBoards.push(attackBoard);
+        }
+
+        for (let i = 0; i < FULL_BOARD_DIMENSION; i++) {
+            for (let j = 0; j < FULL_BOARD_DIMENSION; j++) {
+                if (fullBoardData.cells[i][j].hostedAttackBoard?.type === fullBoardData.attackBoardLeft?.type) {
+                    cells.push(this.formatCell(
+                        fullBoardData.cells[i][j],
+                        fullBoardType, 
+                        BoardType.Full, 
+                        attackBoards.find(b => b.type === fullBoardData.attackBoardLeft.type)
+                    ));
+                } else if (fullBoardData.cells[i][j].hostedAttackBoard?.type === fullBoardData.attackBoardRight?.type) {
+                    cells.push(this.formatCell(
+                        fullBoardData.cells[i][j],
+                        fullBoardType, 
+                        BoardType.Full, 
+                        attackBoards.find(b => b.type === fullBoardData.attackBoardRight.type)
+                    ));
+                } else {
+                    cells.push(this.formatCell(fullBoardData.cells[i][j], fullBoardType, BoardType.Full, null));
+                }
+            }
         }
 
         if (fullBoardType === FullBoardType.Top) {
@@ -140,7 +170,8 @@ export default class GameController {
     private formatCell(
         rawCellData: Cell, 
         specificBoardType: FullBoardType | AttackBoardType,
-        boardType: BoardType 
+        boardType: BoardType,
+        attackBoard: ViewAttackBoard
     ): ViewCell {
         return {
             x: rawCellData.x,
@@ -150,11 +181,9 @@ export default class GameController {
                 color: rawCellData.piece.color
             } : null,
             boardType: specificBoardType,
-            hostedAttackBoard: rawCellData.hostedAttackBoard ? {
-                type: rawCellData.hostedAttackBoard.type,
-                color: rawCellData.hostedAttackBoard.color
-            } : null,
+            hostedAttackBoard: attackBoard, // can be null
             isOnAttackBoard: boardType === BoardType.Attack,
+            attackBoardId: boardType === BoardType.Attack ? attackBoard.id : null,
             object: null,
             renderedColor: null
         }
@@ -170,12 +199,17 @@ export default class GameController {
 
     // TODO: you need to account for obstacles (i.e., other pieces)
     // TODO: need to handle moving across boards
+    // TODO: cover case where there are friendly or enemy pieces on the cells
     private getPiecePossibleMoves(piece: ViewPiece, cell: ViewCell): ViewCell[] {
         console.log({
             piece,
             cell,
         });
         const possibleCells: ViewCell[] = [];
+        this.pushCellsAboveAndBelow(cell, possibleCells);
+
+        console.log({possibleCells});
+
         if (cell.isOnAttackBoard) {
             //
         } else {
@@ -202,15 +236,105 @@ export default class GameController {
                     });
 
                     if (cell.x + x === c.x && cell.y + y === c.y) {
-                        console.log("pushed cell");
                         possibleCells.push(c);
                     }
                 }
             }
         }
 
-
         return possibleCells;
+    }
+
+    private pushCellsAboveAndBelow(cell: ViewCell, cells: ViewCell[]) {
+        if (cell.isOnAttackBoard) {
+            let position: number[] = [];
+
+            // find position of attack board
+            for (const fullBoard of [this.data.fullBoardBottom, this.data.fullBoardMiddle, this.data.fullBoardTop]) {
+                if (position.length) {
+                    break;
+                }
+
+                for (const c of fullBoard.cells) {
+                    if (c.hostedAttackBoard?.id === cell.attackBoardId) {
+                        // check if cell variable is on the correct corner of the
+                        // attack board
+                        if ((c.x === 0 && c.y === 0 && cell.x === 1 && cell.y === 1) ||
+                            (c.x === 0 && c.y === 3 && cell.x === 1 && cell.y === 0) ||
+                            (c.x === 3 && c.y === 0 && cell.x === 0 && cell.y === 1) ||
+                            (c.x === 3 && c.y === 3 && cell.x === 0 && cell.y === 0))
+                               {
+                            cells.push(c);
+                        } 
+
+                        position = [c.x, c.y];
+                        break;
+                    }
+                }
+            }
+        } else {
+            if (cell.boardType === FullBoardType.Bottom) {
+                if (cell.x >= 2) {
+                    for (const c of this.data.fullBoardMiddle.cells) {
+                        if (c.x === cell.x - 2 && c.y === cell.y) {
+                            cells.push(c); 
+                        }
+                    }
+                }
+            } else if (cell.boardType === FullBoardType.Middle) {
+                if (cell.x < 2) {
+                    for (const c of this.data.fullBoardBottom.cells) {
+                        if (c.x === cell.x + 2 && c.y === cell.y) {
+                            cells.push(c);
+                        }
+                    }
+                } else {
+                    for (const c of this.data.fullBoardTop.cells) {
+                        if (c.x === cell.x - 2 && c.y === cell.y) {
+                            cells.push(c);
+                        }
+                    }
+                }
+            } else if (cell.boardType === FullBoardType.Top) {
+                if (cell.x < 2) {
+                    for (const c of this.data.fullBoardMiddle.cells) {
+                        if (c.x === cell.x + 2 && c.y === cell.y) {
+                            cells.push(c);
+                        }
+                    }
+                }
+            }
+
+            if (cell.hostedAttackBoard) {
+                if (cell.x === 0 && cell.y === 0) {
+                    for (const c of cell.hostedAttackBoard.cells) {
+                        if (c.x === 1 && c.y === 1) {
+                            cells.push(c);
+                        }
+                    }
+                } else if (cell.x === 3 && cell.y === 0) {
+                    for (const c of cell.hostedAttackBoard.cells) {
+                        if (c.x === 0 && c.y === 1) {
+                            cells.push(c); 
+                        }
+                    }
+                } else if (cell.x === 0 && cell.y === 3) {
+                    for (const c of cell.hostedAttackBoard.cells) {
+                        if (c.x === 1 && c.y === 0) {
+                            cells.push(c); 
+                        }
+                    }
+                } else if (cell.x === 3 && cell.y === 3) {
+                    for (const c of cell.hostedAttackBoard.cells) {
+                        if (c.x === 0 && c.y === 0) {
+                            cells.push(c); 
+                        }
+                    }
+                }
+            }
+        }
+
+        return cells;
     }
 
     private getMoveOffsetBasedOnPiece(piece: ViewPiece): PieceMoveOffset[] {

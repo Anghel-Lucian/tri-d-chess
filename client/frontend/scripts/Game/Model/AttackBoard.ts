@@ -15,10 +15,12 @@ export default class AttackBoard {
     public color: PlayerColor;
     public cells: Cell[][];
     public captured: boolean;
+    public id: string;
 
     constructor(type: AttackBoardType, pieces: PieceMap, color: PlayerColor) {
         this.type = type;
         this.color = color;
+        this.id = Math.random().toString(16).slice(2);
 
         this.initializeCellsAndPieces(pieces);
     }
@@ -137,7 +139,8 @@ export default class AttackBoard {
             cells: this.cells,
             color: this.color,
             captured: this.captured,
-            type: this.type
+            type: this.type,
+            id: this.id
         }
     }
 }

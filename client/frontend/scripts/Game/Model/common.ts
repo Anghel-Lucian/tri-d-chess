@@ -5,7 +5,8 @@ export interface SerializedAttackBoard {
     cells: Cell[][],
     color: PlayerColor,
     captured: boolean,
-    type: AttackBoardType
+    type: AttackBoardType,
+    id: string
 }
 
 export interface SerializedFullBoard {
