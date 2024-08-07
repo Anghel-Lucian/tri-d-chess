@@ -2,7 +2,7 @@ import Cell from "../Model/Cell";
 import Game from "../Model/Game";
 import GameView from "../View/GameView";
 import { SerializedBoards, SerializedFullBoard } from "../Model/common";
-import { ViewData, ViewCell, ViewAttackBoard, ViewPiece } from "../View/utils";
+import { ViewData, ViewCell, ViewAttackBoard, ViewPiece, ViewFullBoard } from "../View/utils";
 import {
     ATTACK_BOARD_DIMENSION,
     AttackBoardType,
@@ -244,7 +244,24 @@ export default class GameController {
             }
         }
 
-        return possibleCells;
+        const finalCells = [];
+
+        for (const c of possibleCells) {
+            if (c.piece?.color === piece.color) {
+                continue;
+            }
+
+            if (cell.piece.name === PieceName.Knight) {
+                finalCells.push(c);
+                continue;
+            }
+
+            if (!this.cellPathIsObstructed(cell, c)) {
+                finalCells.push(c);
+            }
+        }
+
+        return finalCells;
     }
 
     private pushCellsAboveAndBelow(cell: ViewCell, cells: ViewCell[]) {
@@ -497,5 +514,132 @@ export default class GameController {
         }
 
         return null;
+    }
+   
+    // TODO: test this part by having two enemy pieces on the same baord.
+    // Cells after the enemy piece should not be highlighted, but the cell
+    // that's holding the enemy piece should be
+    private cellPathIsObstructed(start: ViewCell, end: ViewCell): boolean {
+        if (this.cellsAreOnDifferentBoards(start, end)) {
+            return false;
+        }
+
+        const board = this.getBoardFromCell(start);
+
+        if (start.x === end.x) {
+            if (start.y < end.y) {
+                for (let i = 1; i < end.y - start.y; i++) {
+                    for (const c of board.cells) {
+                        if (c.x === start.x &&
+                            c.y === start.y + i &&
+                            c.piece) {
+                            return true; 
+                        }
+                    }
+                }
+            } else {
+                for (let i = 1; i < start.y - end.y; i++) {
+                    for (const c of board.cells) {
+                        if (c.x === start.x &&
+                            c.y === start.y - i &&
+                            c.piece) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } else if (start.y === end.y) {
+            if (start.x < end.x) {
+                for (let i = 1; i < end.x - start.x; i++) {
+                    for (const c of board.cells) {
+                        if (c.y === start.y &&
+                            c.x === start.x + i &&
+                            c.piece) {
+                            return true; 
+                        }
+                    }
+                }
+            } else {
+                for (let i = 1; i < start.x - end.x; i++) {
+                    for (const c of board.cells) {
+                        if (c.y === start.y &&
+                            c.x === start.x - i &&
+                            c.piece) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } else {
+            // we know that end.x/y and start.x/y cannot be equal
+            // because of the branches above
+            const endXIsSmaller = end.x < start.x;
+            const endYIsSmaller = end.y < start.y;
+
+            for (let i = 1; i < Math.abs(start.x - end.x); i++) {
+                for (const c of board.cells) {
+                    let adjustedStartXEqualToCX = false;
+                    let adjustedStartYEqualToCY = false;
+                    
+                    if (endXIsSmaller) {
+                        adjustedStartXEqualToCX = start.x - i === c.x;
+                    } else {
+                        adjustedStartXEqualToCX = start.x + i === c.x;
+                    }
+
+                    if (endYIsSmaller) {
+                        adjustedStartYEqualToCY = start.y - i === c.y;
+                    } else {
+                        adjustedStartYEqualToCY = start.y + i === c.y;
+                    }
+
+                    if (adjustedStartXEqualToCX && adjustedStartYEqualToCY && c.piece) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private getBoardFromCell(cell: ViewCell): ViewFullBoard | ViewAttackBoard {
+        if (cell.isOnAttackBoard) {
+            for (const fullBoard of [this.data.fullBoardBottom, this.data.fullBoardMiddle, this.data.fullBoardTop]) {
+                for (const c of fullBoard.cells) {
+                    if (c.hostedAttackBoard?.id === cell.attackBoardId) {
+                        return c.hostedAttackBoard;
+                    }
+                }
+            }
+        }
+
+        let board = null;
+
+        if (cell.boardType === FullBoardType.Bottom) {
+            board = this.data.fullBoardBottom;
+        } else if (cell.boardType === FullBoardType.Middle) {
+            board = this.data.fullBoardMiddle;
+        } else {
+            board = this.data.fullBoardTop;
+        }
+
+        return board;
+    }
+
+    private cellsAreOnDifferentBoards(cell1: ViewCell, cell2: ViewCell): boolean {
+        if (cell1.isOnAttackBoard !== cell2.isOnAttackBoard) {
+            return true;
+        } else if (cell1.isOnAttackBoard) {
+            if (cell1.attackBoardId !== cell2.attackBoardId) {
+                return true;
+            }
+        } else {
+            if (cell1.boardType !== cell2.boardType) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
